@@ -1,11 +1,43 @@
 
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Plane, Map, Calendar, Users } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
+
+  const destinations = [
+    {
+      id: 1,
+      name: "Spiritual Journey",
+      image: "https://images.unsplash.com/photo-1492321936769-b49830bc1d1e?w=300&h=200&fit=crop",
+      description: "Discover sacred temples and spiritual experiences"
+    },
+    {
+      id: 2,
+      name: "Adventure Trails",
+      image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300&h=200&fit=crop",
+      description: "Thrilling hiking and trekking adventures"
+    },
+    {
+      id: 3,
+      name: "Cultural Heritage",
+      image: "https://images.unsplash.com/photo-1466442929976-97f336a657be?w=300&h=200&fit=crop",
+      description: "Explore museums and historical monuments"
+    },
+    {
+      id: 4,
+      name: "Nature Escapes",
+      image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=300&h=200&fit=crop",
+      description: "Beautiful parks and eco-tourism experiences"
+    },
+    {
+      id: 5,
+      name: "City Entertainment",
+      image: "https://images.unsplash.com/photo-1527576539890-dfa815648363?w=300&h=200&fit=crop",
+      description: "Shopping malls and entertainment venues"
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-orange-50 to-green-50">
@@ -18,7 +50,7 @@ const Index = () => {
             </div>
           </div>
           <h1 className="text-5xl font-bold text-gray-800 mb-6 bg-gradient-to-r from-blue-600 to-orange-600 bg-clip-text text-transparent">
-            TravelGenie
+            Smart Trip Planner
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Your AI-powered travel companion that creates personalized itineraries 
@@ -29,8 +61,33 @@ const Index = () => {
             size="lg"
             className="bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
           >
-            Start Your Journey
+            Get Started
           </Button>
+        </div>
+
+        {/* Destinations Gallery */}
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">
+            Explore Amazing Destinations
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+            {destinations.map((destination) => (
+              <div key={destination.id} className="bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-white/20 group cursor-pointer">
+                <div className="relative overflow-hidden">
+                  <img 
+                    src={destination.image} 
+                    alt={destination.name}
+                    className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+                </div>
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">{destination.name}</h3>
+                  <p className="text-sm text-gray-600">{destination.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Features Grid */}
