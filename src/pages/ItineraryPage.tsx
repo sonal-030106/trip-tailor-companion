@@ -1,16 +1,48 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, Utensils, Car, Phone, Share2, Download, Navigation, Plus, X, Calendar, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const ItineraryPage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [selectedDay, setSelectedDay] = useState(1);
   const [showEventModal, setShowEventModal] = useState(false);
   const [showAddPlaceModal, setShowAddPlaceModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [itinerary, setItinerary] = useState<any[]>([]);
+
+  // Get user selections from navigation state
+  const {
+    selectedHotel,
+    selectedPlaces,
+    foodOptions,
+    transport,
+    startDate,
+    endDate,
+    destination,
+    travelCompanion,
+    placesPerDay
+  } = location.state || {};
+
+  // Debug: log all required fields
+  console.log('ItineraryPage state:', {
+    selectedHotel,
+    selectedPlaces,
+    foodOptions,
+    transport,
+    startDate,
+    endDate,
+    destination,
+    travelCompanion,
+    placesPerDay
+  });
 
   const events = [
     {
@@ -60,188 +92,64 @@ const ItineraryPage = () => {
     }
   ];
 
-  const itinerary = [
-    {
-      day: 1,
-      title: "Siddhivinayak + ISKCON Juhu",
-      hotel: "Hotel Shree Sai Palace (Dadar)",
-      image: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=400&h=250&fit=crop",
-      description: "Start your spiritual journey with Mumbai's most famous temples",
-      activities: [
-        {
-          time: "6:30 AM",
-          activity: "Walk to Siddhivinayak Temple",
-          duration: "5 mins",
-          icon: <MapPin className="h-4 w-4 text-blue-500" />,
-          description: "Early morning darshan with least crowd",
-          image: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=200&h=150&fit=crop",
-          mapUrl: "https://www.google.com/maps/place/Siddhivinayak+Temple,+Mumbai"
-        },
-        {
-          time: "7:00 AM",
-          activity: "Darshan at Siddhivinayak",
-          duration: "1 hour",
-          icon: <div className="text-orange-500">🕉️</div>,
-          description: "Peaceful morning prayers at Mumbai's most revered Ganesha temple",
-          image: "https://images.unsplash.com/photo-1609920658906-8223bd289001?w=200&h=150&fit=crop",
-          mapUrl: "https://www.google.com/maps/place/Siddhivinayak+Temple,+Mumbai"
-        },
-        {
-          time: "8:00 AM",
-          activity: "Breakfast at hotel",
-          duration: "30 mins",
-          icon: <Utensils className="h-4 w-4 text-green-500" />,
-          description: "Try Puran Poli - hotel specialty with authentic Maharashtrian flavors",
-          image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=200&h=150&fit=crop",
-          mapUrl: "https://www.google.com/maps/place/Hotel+Shree+Sai+Palace,+Dadar"
-        },
-        {
-          time: "10:00 AM",
-          activity: "Travel to ISKCON Juhu",
-          duration: "25 mins",
-          icon: <Car className="h-4 w-4 text-purple-500" />,
-          description: "Train from Dadar to Andheri, then auto (₹50) - scenic coastal route",
-          image: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=200&h=150&fit=crop",
-          mapUrl: "https://www.google.com/maps/dir/Dadar/ISKCON+Juhu,+Mumbai"
-        },
-        {
-          time: "11:00 AM",
-          activity: "Explore ISKCON Temple",
-          duration: "2 hours",
-          icon: <div className="text-blue-500">🏛️</div>,
-          description: "Beautiful Krishna temple with cultural programs and spiritual atmosphere",
-          image: "https://images.unsplash.com/photo-1609920658906-8223bd289001?w=200&h=150&fit=crop",
-          mapUrl: "https://www.google.com/maps/place/ISKCON+Juhu,+Mumbai"
-        },
-        {
-          time: "1:00 PM",
-          activity: "Lunch at Govinda's Restaurant",
-          duration: "1 hour",
-          icon: <Utensils className="h-4 w-4 text-green-500" />,
-          description: "Delicious pure vegetarian thali (₹200) with prasadam quality food",
-          image: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=200&h=150&fit=crop",
-          mapUrl: "https://www.google.com/maps/place/Govinda's+Restaurant,+ISKCON+Juhu"
-        }
-      ]
-    },
-    {
-      day: 2,
-      title: "Mahalaxmi + Babulnath",
-      hotel: "Hotel Aram (Marine Lines)",
-      image: "https://images.unsplash.com/photo-1580418827493-f2b22c0a76cb?w=400&h=250&fit=crop",
-      description: "Explore the divine beauty of Mahalaxmi and Babulnath temples",
-      activities: [
-        {
-          time: "6:30 AM",
-          activity: "Taxi to Mahalaxmi Temple",
-          duration: "15 mins",
-          icon: <Car className="h-4 w-4 text-purple-500" />,
-          description: "Morning ride (₹100) to the sacred Mahalaxmi Temple",
-          image: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=200&h=150&fit=crop",
-          mapUrl: "https://www.google.com/maps/place/Shree+Mahalakshmi+Temple,+Mumbai"
-        },
-        {
-          time: "7:00 AM",
-          activity: "Darshan + Sea View",
-          duration: "1.5 hours",
-          icon: <div className="text-orange-500">🕉️</div>,
-          description: "Temple visit with beautiful ocean views and spiritual ambiance",
-          image: "https://images.unsplash.com/photo-1580418827493-f2b22c0a76cb?w=200&h=150&fit=crop",
-          mapUrl: "https://www.google.com/maps/place/Shree+Mahalakshmi+Temple,+Mumbai"
-        },
-        {
-          time: "8:30 AM",
-          activity: "Breakfast at Cafe Madras",
-          duration: "45 mins",
-          icon: <Utensils className="h-4 w-4 text-green-500" />,
-          description: "Authentic South Indian breakfast in Matunga - filter coffee and dosa",
-          image: "https://images.unsplash.com/photo-1555529777-3c384d51014c?w=200&h=150&fit=crop",
-          mapUrl: "https://www.google.com/maps/place/Cafe+Madras,+Matunga,+Mumbai"
-        },
-        {
-          time: "10:00 AM",
-          activity: "Travel to Babulnath Temple",
-          duration: "10 mins",
-          icon: <Car className="h-4 w-4 text-purple-500" />,
-          description: "Short taxi ride (₹80) to the ancient Babulnath Temple",
-          image: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=200&h=150&fit=crop",
-          mapUrl: "https://www.google.com/maps/place/Babulnath+Mandir,+Mumbai"
-        },
-        {
-          time: "11:00 AM",
-          activity: "Babulnath Temple Visit",
-          duration: "1.5 hours",
-          icon: <div className="text-orange-500">🕉️</div>,
-          description: "Ancient Shiva temple with Malabar Hill views and spiritual significance",
-          image: "https://images.unsplash.com/photo-1579684455267-5449cd995492?w=200&h=150&fit=crop",
-          mapUrl: "https://www.google.com/maps/place/Babulnath+Mandir,+Mumbai"
-        },
-        {
-          time: "12:30 PM",
-          activity: "Lunch at Hotel Aram",
-          duration: "1 hour",
-          icon: <Utensils className="h-4 w-4 text-green-500" />,
-          description: "Hotel's special veg biryani with aromatic spices and traditional flavors",
-          image: "https://images.unsplash.com/photo-1555529777-3c384d51014c?w=200&h=150&fit=crop",
-          mapUrl: "https://www.google.com/maps/place/Hotel+Aram,+Marine+Lines,+Mumbai"
-        }
-      ]
-    },
-    {
-      day: 3,
-      title: "Mumbadevi + Walkeshwar",
-      hotel: "Hotel Gurukripa (Girgaum)",
-      image: "https://images.unsplash.com/photo-1579684455267-5449cd995492?w=400&h=250&fit=crop",
-      description: "Discover the historical and spiritual essence of Mumbai",
-      activities: [
-        {
-          time: "7:00 AM",
-          activity: "Walk to Mumbadevi Temple",
-          duration: "10 mins",
-          icon: <MapPin className="h-4 w-4 text-blue-500" />,
-          description: "Morning walk to the ancient temple of Mumbadevi",
-          image: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=200&h=150&fit=crop",
-          mapUrl: "https://www.google.com/maps/place/Mumbadevi+Temple,+Mumbai"
-        },
-        {
-          time: "8:00 AM",
-          activity: "Breakfast at Shree Thaker Bhojanalay",
-          duration: "45 mins",
-          icon: <Utensils className="h-4 w-4 text-green-500" />,
-          description: "Traditional Gujarati thali with a variety of flavors and dishes",
-          image: "https://images.unsplash.com/photo-1555529777-3c384d51014c?w=200&h=150&fit=crop",
-          mapUrl: "https://www.google.com/maps/place/Shree+Thaker+Bhojanalay,+Mumbai"
-        },
-        {
-          time: "10:00 AM",
-          activity: "Bus to Walkeshwar Temple",
-          duration: "25 mins",
-          icon: <Car className="h-4 w-4 text-purple-500" />,
-          description: "Bus #123 to Walkeshwar - scenic route through the city",
-          image: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=200&h=150&fit=crop",
-          mapUrl: "https://www.google.com/maps/dir/Mumbadevi+Temple,+Mumbai/Walkeshwar+Temple,+Mumbai"
-        },
-        {
-          time: "11:00 AM",
-          activity: "Walkeshwar Temple + Banganga Tank",
-          duration: "2 hours",
-          icon: <div className="text-orange-500">🕉️</div>,
-          description: "Historic temple complex with sacred tank and spiritual ambiance",
-          image: "https://images.unsplash.com/photo-1579684455267-5449cd995492?w=200&h=150&fit=crop",
-          mapUrl: "https://www.google.com/maps/place/Walkeshwar+Temple,+Mumbai"
-        },
-        {
-          time: "1:00 PM",
-          activity: "Lunch at Hotel",
-          duration: "1 hour",
-          icon: <Utensils className="h-4 w-4 text-green-500" />,
-          description: "South Indian meals at Guru Kripa with traditional flavors",
-          image: "https://images.unsplash.com/photo-1555529777-3c384d51014c?w=200&h=150&fit=crop",
-          mapUrl: "https://www.google.com/maps/place/Hotel+Gurukripa,+Girgaum,+Mumbai"
-        }
-      ]
+  useEffect(() => {
+    // If itinerary is passed in state, use it
+    if (location.state?.itinerary) {
+      setItinerary(location.state.itinerary);
+      return;
     }
-  ];
+    // If required data is missing, show error
+    if (!selectedHotel || !selectedPlaces || !foodOptions || !transport || !startDate || !endDate || !destination) {
+      setError("Missing trip details. Please go back and complete the selection.");
+      return;
+    }
+    // Otherwise, fetch itinerary from AI
+    setLoading(true);
+    setError("");
+    const prompt = `Generate a detailed, day-wise travel itinerary for a tourist visiting ${destination} from ${startDate} to ${endDate}.\n- The user's preferred transport to reach the city is ${transport}, but please suggest all reasonable options for each leg (e.g., taxi, metro, bus, auto, walking, etc.) with fare estimates and timing, especially for non-locals.\n- The user will stay at ${selectedHotel.name}.\n- The user wants to visit these places: ${selectedPlaces.map((p: any) => p.name).join(", ")}.\n- The user's food preferences are: ${foodOptions.join(", ")}.\n- The user is traveling as: ${travelCompanion}.\n- The user wants to visit ${placesPerDay} places per day.\nFor each day, include:\n1. How to reach the hotel from the arrival point (with all options, fares, and timing).\n2. For each place, how to get there from the hotel (all options, fares, timing, step-by-step if needed).\n3. Suggest famous food and souvenirs at each place.\n4. Suggest meal options based on food preferences.\n5. At the end of the last day, suggest lunch at the hotel and how to reach the next destination (with all options).\n6. Include a short description for each activity and mention the time for each.\nRespond ONLY with a valid JSON array, one object per day, with fields: day, title, hotel, image, description, activities (array of: time, activity, duration, description, image, mapUrl, transportOptions, foodSuggestions, souvenirSuggestions). Do not include any explanation, comments, or extra text.`;
+    fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [
+          { role: 'system', content: 'You are a helpful travel assistant.' },
+          { role: 'user', content: prompt }
+        ]
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        const content = data.choices?.[0]?.message?.content || '';
+        console.log('AI raw response:', content);
+        let parsed = [];
+        try {
+          // Try to find the first [ and last ] and parse only that substring
+          const firstBracket = content.indexOf('[');
+          const lastBracket = content.lastIndexOf(']');
+          if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+            const jsonString = content.substring(firstBracket, lastBracket + 1);
+            parsed = JSON.parse(jsonString);
+          } else {
+            throw new Error('No valid JSON array found in AI response.');
+          }
+        } catch (err) {
+          setError('Sorry, could not parse itinerary data.');
+          setLoading(false);
+          return;
+        }
+        setItinerary(parsed);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError('Failed to fetch itinerary. Please try again.');
+        setLoading(false);
+      });
+  // eslint-disable-next-line
+  }, []);
+
+  if (loading) return <div className="text-center p-8 text-lg">Generating your personalized itinerary...</div>;
+  if (error) return <div className="text-center p-8 text-red-500">{error}</div>;
+  if (!itinerary.length) return <div className="text-center p-8 text-gray-500">No itinerary found.</div>;
 
   const currentDay = itinerary.find(day => day.day === selectedDay);
 
@@ -403,15 +311,6 @@ const ItineraryPage = () => {
                               <h4 className="font-semibold text-gray-800">{activity.activity}</h4>
                             </div>
                             <p className="text-gray-600 text-sm mb-2">{activity.description}</p>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => openMaps(activity.mapUrl)}
-                              className="text-xs"
-                            >
-                              <Navigation className="h-3 w-3 mr-1" />
-                              Get Directions
-                            </Button>
                           </div>
                           <div className="text-right ml-4">
                             <Badge variant="outline" className="mb-1">

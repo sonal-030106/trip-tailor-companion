@@ -93,7 +93,22 @@ const allCategories = [
 const PreferencesPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const destination = location.state?.destination;
+  // Debug: log all state received from QuestionnairePage
+  console.log('PreferencesPage location.state:', location.state);
+  // Helper to get from state or sessionStorage
+  const getFromStateOrSession = (key, fallback = undefined) => {
+    if (location.state && location.state[key] !== undefined) return location.state[key];
+    const stored = sessionStorage.getItem(key);
+    return stored ? JSON.parse(stored) : fallback;
+  };
+  const destination = getFromStateOrSession('destination', '');
+  const days = getFromStateOrSession('days', '');
+  const placesPerDay = getFromStateOrSession('placesPerDay', '');
+  const startDate = getFromStateOrSession('startDate', '');
+  const endDate = getFromStateOrSession('endDate', '');
+  const foodOptions = getFromStateOrSession('foodOptions', []);
+  const transport = getFromStateOrSession('transport', '');
+  const travelCompanion = getFromStateOrSession('travelCompanion', '');
   const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
     const saved = sessionStorage.getItem('selectedCategories');
     if (!saved) return [];
@@ -191,7 +206,14 @@ const PreferencesPage = () => {
         categories: selectedCategories,
         preferences: selectedPreferences,
         attendEvents,
-        visitAttractions: false // This path is for interests, not general attractions
+        visitAttractions: false,
+        days,
+        placesPerDay,
+        startDate,
+        endDate,
+        foodOptions,
+        transport,
+        travelCompanion
       }
     });
   };
@@ -280,7 +302,7 @@ const PreferencesPage = () => {
                             );
                           }}
                         >
-                          {category.options.every(opt => selectedPreferences.includes(opt)) ? 'Unselect All' : 'Select All'}
+                          {category.options.every(opt => selectedPreferences.includes(opt.name)) ? 'Unselect All' : 'Select All'}
                         </button>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">

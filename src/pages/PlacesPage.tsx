@@ -56,6 +56,11 @@ const PlacesPage = () => {
     error: '',
     lastSearched: false
   });
+  const [selectedHotel, setSelectedHotel] = useState(null);
+  // For demo, get foodOptions, transport, travelCompanion from location.state (should be passed from Questionnaire/Preferences)
+  const foodOptions = location.state?.foodOptions || [];
+  const transport = location.state?.transport || '';
+  const travelCompanion = location.state?.travelCompanion || '';
 
   // Helper to get top 3 places for a category
   const getVisiblePlaces = (cat: string) => {
@@ -258,83 +263,8 @@ const PlacesPage = () => {
       setPlacesByCategory(newPlaces);
       setLoadedCount(newLoaded);
       setLoading(false);
-
-      // Fetch events if attendEvents is true
-      if (attendEvents) {
-        try {
-          const prompt = `Generate a detailed JSON response listing upcoming major events (such as festivals, concerts, music events, shows, religious processions, exhibitions, or cultural gatherings) happening in ${destination} between ${startDate} and ${endDate} (inclusive). Only include events that occur within this date range. Examples of events: Kala Ghoda Festival in Mumbai, Palkhi Wari in Pandharpur, Coachella in USA, etc.
-
-For each event, provide the following fields:
-- name: Event name
-- date_time: Date and time of the event (in YYYY-MM-DD format, include time if known)
-- venue: Venue or location
-- description: 1-2 line description of the event
-- category: e.g., music, religious, art, etc.
-- highlights: Key highlights or features (if applicable)
-- ticket_info: Ticket or registration information (if available)
-- who_can_visit: Age restrictions or audience (e.g., All ages)
-- image_url: A relevant image URL (preferably from Wikimedia Commons)
-
-Respond ONLY with a valid JSON array of objects with these fields. Do not include any explanation, comments, or extra text.`;
-          const res = await fetch("/api/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              messages: [
-                { role: "system", content: "You are a helpful travel assistant." },
-                { role: "user", content: prompt }
-              ]
-            })
-          });
-          const data = await res.json();
-          const content = data.choices?.[0]?.message?.content || "";
-          console.log("AI Response (Events):", content);
-          let parsed: Place[] = [];
-          try {
-            parsed = JSON.parse(content);
-          } catch {
-            const match = content.match(/\[.*\]/s);
-            if (match) {
-              try {
-                parsed = JSON.parse(match[0]);
-              } catch {
-                 console.error("Failed to parse extracted JSON for events. Original content:", content, "Extracted:", match[0]);
-                setLoading(false);
-                return;
-              }
-            } else {
-               console.error("No valid JSON found in AI response for events. Content:", content);
-              setLoading(false);
-              return;
-            }
-          }
-          // Post-filter events by timing
-          const start = new Date(startDate);
-          const end = new Date(endDate);
-          const filtered = parsed.filter(event => {
-            if (!event.timing) return false;
-            // Try to extract a date from the timing string
-            const dateMatch = event.timing.match(/\b(\d{4}-\d{2}-\d{2})\b/); // e.g. 2024-07-10
-            if (dateMatch) {
-              const eventDate = new Date(dateMatch[1]);
-              return eventDate >= start && eventDate <= end;
-            }
-            // Try to match other common formats (e.g. July 10, 2024)
-            const altDateMatch = event.timing.match(/([A-Za-z]+ \d{1,2}, \d{4})/);
-            if (altDateMatch) {
-              const eventDate = new Date(altDateMatch[1]);
-              return eventDate >= start && eventDate <= end;
-            }
-            // If no recognizable date, exclude
-            return false;
-          });
-          setEvents(filtered);
-        } catch (err) {
-          setError("Failed to fetch events. Please check your network or try again.");
-        }
-      }
+      // Do NOT fetch events anymore
     };
-
     fetchInitial();
     // eslint-disable-next-line
   }, [destination, categories, preferences, visitAttractions, attendEvents, startDate, endDate]);
@@ -512,10 +442,16 @@ Respond ONLY with a valid JSON array of objects with these fields. Do not includ
   const totalAvailable = (() => {
     let count = 0;
     Object.values(placesByCategory).forEach(cat => { count += cat.places.length; });
-    count += events.length;
     return count;
   })();
   const canProceed = selectedItems.length >= minRequired || totalAvailable < minRequired;
+
+  // Only allow proceed if 1 hotel and at least 4 places are selected
+  const selectedPlaces = selectedItems.filter(item => item.type === 'place');
+  const canProceedToItinerary = selectedHotel && selectedPlaces.length >= 4;
+
+  // Store previous itinerary in state (for showing while loading new one)
+  const [previousItinerary, setPreviousItinerary] = useState(null);
 
   const renderPlaceCard = (place: Place, category: string, type: 'place' | 'event') => (
     <Card
@@ -626,28 +562,67 @@ Respond ONLY with a valid JSON array of objects with these fields. Do not includ
       <h1 className="text-4xl font-bold text-center mb-2 text-gray-800">Your Recommendations for {destination}</h1>
       <p className="text-center text-gray-600 mb-8">Discover amazing places and events tailored to your interests.</p>
 
-      {attendEvents && (
-        <div className="flex justify-center mb-8">
-          <button
-            onClick={() => setActiveTab('places')}
-            className={`px-6 py-2 rounded-l-lg transition-colors ${activeTab === 'places' ? 'bg-orange-500 text-white' : 'bg-white text-orange-500'}`}
-          >
-            Places
-          </button>
-          <button
-            onClick={() => setActiveTab('events')}
-            className={`px-6 py-2 transition-colors ${activeTab === 'events' ? 'bg-orange-500 text-white' : 'bg-white text-orange-500'}`}
-          >
-            Events
-          </button>
-          <button
-            onClick={() => setActiveTab('hotels')}
-            className={`px-6 py-2 rounded-r-lg transition-colors ${activeTab === 'hotels' ? 'bg-orange-500 text-white' : 'bg-white text-orange-500'}`}
-          >
-            Hotels
-          </button>
-        </div>
-      )}
+      {/* Continue to Itinerary button above tabs */}
+      <div className="flex justify-center mb-8">
+        <Button
+          className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full text-lg"
+          disabled={!canProceedToItinerary}
+          onClick={() => {
+            // Save previous itinerary if any
+            setPreviousItinerary(null); // You can store the last itinerary here if needed
+            // Log in console when generating new one
+            console.log('Generating new itinerary...');
+            // Gather all required data and navigate
+            navigate('/itinerary', {
+              state: {
+                selectedHotel,
+                selectedPlaces: selectedPlaces.map(item => {
+                  // Find full place object
+                  let found = null;
+                  Object.values(placesByCategory).forEach(cat => {
+                    const match = cat.places.find(p => p.name === item.name);
+                    if (match) found = match;
+                  });
+                  return found || { name: item.name };
+                }),
+                foodOptions,
+                transport,
+                destination,
+                startDate,
+                endDate,
+                days,
+                placesPerDay,
+                travelCompanion,
+                previousItinerary
+              }
+            });
+          }}
+        >
+          Continue to Itinerary
+        </Button>
+      </div>
+
+      {/* Always show tab navigation */}
+      <div className="flex justify-center mb-8">
+        <button
+          onClick={() => setActiveTab('places')}
+          className={`px-6 py-2 rounded-l-lg transition-colors ${activeTab === 'places' ? 'bg-orange-500 text-white' : 'bg-white text-orange-500'}`}
+        >
+          Places
+        </button>
+        <button
+          onClick={() => setActiveTab('events')}
+          className={`px-6 py-2 transition-colors ${activeTab === 'events' ? 'bg-orange-500 text-white' : 'bg-white text-orange-500'}`}
+        >
+          Events
+        </button>
+        <button
+          onClick={() => setActiveTab('hotels')}
+          className={`px-6 py-2 rounded-r-lg transition-colors ${activeTab === 'hotels' ? 'bg-orange-500 text-white' : 'bg-white text-orange-500'}`}
+        >
+          Hotels
+        </button>
+      </div>
 
       {activeTab === 'places' && (
         <div className="space-y-12">
@@ -746,16 +721,7 @@ Respond ONLY with a valid JSON array of objects with these fields. Do not includ
       {activeTab === 'events' && (
         <div>
           <h2 className="text-3xl font-bold mb-6 text-gray-800">Local Events</h2>
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {events.slice(0, eventsLoaded).map((event) => renderPlaceCard(event, 'event', 'event'))}
-          </div>
-          {events.length > eventsLoaded && (
-            <div className="text-center mt-8">
-              <Button onClick={handleShowMoreEvents} className="bg-orange-500 hover:bg-orange-600">
-                Show More Events
-              </Button>
-            </div>
-          )}
+          <div className="text-center text-lg text-gray-500">Events coming soon.</div>
         </div>
       )}
 
@@ -764,35 +730,18 @@ Respond ONLY with a valid JSON array of objects with these fields. Do not includ
           destination={destination}
           hotelState={hotelState}
           setHotelState={setHotelState}
+          selectedHotel={selectedHotel}
+          onSelectHotel={setSelectedHotel}
         />
       )}
 
-      {/* Minimum selection message and continue button */}
+      {/* Minimum selection message */}
       <div className="mt-12 text-center">
-        {!canProceed && (
+        {!canProceedToItinerary && (
           <div className="mb-4 text-red-600 font-semibold">
-            Please select at least {minRequired} places/events to continue.
+            Please select 1 hotel and at least 4 places to continue.
           </div>
         )}
-        <Button
-          className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full text-lg"
-          disabled={!canProceed}
-          onClick={() => {
-            // Pass selected items to itinerary page
-            navigate('/itinerary', {
-              state: {
-                selectedItems,
-                destination,
-                startDate,
-                endDate,
-                days,
-                placesPerDay
-              }
-            });
-          }}
-        >
-          Continue to Itinerary
-        </Button>
       </div>
     </div>
   );

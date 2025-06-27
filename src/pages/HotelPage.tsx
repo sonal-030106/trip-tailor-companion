@@ -4,7 +4,7 @@ const budgets = ['low', 'medium', 'high'];
 const companions = ['solo', 'couple', 'family', 'group'];
 const foods = ['Veg', 'Non-Veg', 'Vegan', 'Jain'];
 
-const HotelPage = ({ destination = 'Mumbai', hotelState, setHotelState }) => {
+const HotelPage = ({ destination = 'Mumbai', hotelState, setHotelState, selectedHotel, onSelectHotel }) => {
   const [page, setPage] = useState(0);
   const { hotels, filters, loading, error, lastSearched } = hotelState;
   const { budget, companion, food } = filters;
@@ -18,7 +18,7 @@ const HotelPage = ({ destination = 'Mumbai', hotelState, setHotelState }) => {
     if (budget) filterText += ` Budget: ${budget}.`;
     if (companion) filterText += ` Travel companion: ${companion}.`;
     if (food) filterText += ` Food preference: ${food}.`;
-    const prompt = `List the top 9 hotels in ${destination} for a user with these preferences:${filterText} For each, provide: name, room_type (best suited for the travel companion type), price_per_person (in INR), food (Veg, Non-Veg, Vegan, etc.), companion_type (solo, couple, family, group), budget (low, medium, high), image_url (preferably from Wikimedia Commons or Unsplash). Respond ONLY with a valid JSON array of objects with these fields. Do not include any explanation, comments, or extra text.`;
+    const prompt = `List the top 1 hotels in ${destination} for a user with these preferences:${filterText} For each, provide: name, room_type (best suited for the travel companion type), price_per_person (in INR), food (Veg, Non-Veg, Vegan, etc.), companion_type (solo, couple, family, group), budget (low, medium, high), image_url (preferably from Wikimedia Commons or Unsplash). Respond ONLY with a valid JSON array of objects with these fields. Do not include any explanation, comments, or extra text.`;
     fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -73,6 +73,11 @@ const HotelPage = ({ destination = 'Mumbai', hotelState, setHotelState }) => {
   const hotelsToShow = filteredHotels.slice(page * 6, (page + 1) * 6);
   const totalPages = Math.ceil(filteredHotels.length / 6);
 
+  // Handler for clicking a hotel card
+  const handleHotelClick = (hotel) => {
+    if (onSelectHotel) onSelectHotel(hotel);
+  };
+
   return (
     <div className="p-8 bg-orange-50 min-h-screen">
       <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">Find Your Perfect Hotel</h1>
@@ -107,7 +112,14 @@ const HotelPage = ({ destination = 'Mumbai', hotelState, setHotelState }) => {
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {hotelsToShow.map(hotel => (
-                <div key={hotel.name} className="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col">
+                <div
+                  key={hotel.name}
+                  className={`bg-white rounded-lg shadow-lg overflow-hidden flex flex-col cursor-pointer hover:shadow-xl transition border-2 ${selectedHotel && selectedHotel.name === hotel.name ? 'border-green-500' : 'border-transparent'}`}
+                  onClick={() => handleHotelClick(hotel)}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`View details for ${hotel.name}`}
+                >
                   <img src={hotel.image_url} alt={hotel.name} className="w-full h-40 object-cover" />
                   <div className="p-4 flex flex-col flex-grow">
                     <h2 className="text-2xl font-bold mb-2 text-gray-800">{hotel.name}</h2>

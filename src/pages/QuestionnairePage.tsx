@@ -58,12 +58,14 @@ const QuestionnairePage = () => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     } else {
+      console.log('QuestionnairePage formData at submit:', formData);
+      // Persist all formData fields to sessionStorage
+      Object.entries(formData).forEach(([key, value]) => {
+        sessionStorage.setItem(key, JSON.stringify(value));
+      });
       navigate('/preferences', {
         state: {
-          destination: formData.destination,
-          days: formData.days,
-          placesPerDay: formData.placesPerDay,
-          startDate: formData.startDate,
+          ...formData,
           endDate: calculatedEndDate
         }
       });
