@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Eye, EyeOff, Mail, Lock, Plane } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { auth } from "@/firebase";
+import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "firebase/auth";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -16,6 +17,21 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      if (firebaseUser) {
+        toast({
+          title: "Logged in",
+          description: "You are now logged in!",
+        });
+        navigate('/questionnaire', { replace: true });
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,14 +43,37 @@ const LoginPage = () => {
     setTimeout(() => navigate('/questionnaire'), 1000);
   };
 
-  const handleGoogleSignIn = () => {
-    // Firebase Google sign-in would go here
-    toast({
-      title: "Google Sign-in",
-      description: "Redirecting to questionnaire...",
-    });
-    setTimeout(() => navigate('/questionnaire'), 1000);
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      toast({
+        title: "Google Sign-in Successful",
+        description: "Redirecting to questionnaire...",
+      });
+      setTimeout(() => navigate('/questionnaire'), 1000);
+    } catch (error: any) {
+      toast({
+        title: "Google Sign-in Failed",
+        description: error.message || "An error occurred during Google sign-in.",
+        variant: "destructive",
+      });
+    }
   };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    setUser(null);
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully.",
+    });
+  };
+
+  if (user) {
+    // Don't show the logged-in UI on the login page
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-orange-50 to-green-50 flex items-center justify-center p-4">
