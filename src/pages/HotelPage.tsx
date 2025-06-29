@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { extractJsonArrayFromText } from '../lib/utils';
 
 const budgets = ['low', 'medium', 'high'];
 const companions = ['solo', 'couple', 'family', 'group'];
@@ -34,23 +35,11 @@ const HotelPage = ({ destination = 'Mumbai', hotelState, setHotelState, selected
         const content = data.choices?.[0]?.message?.content || '';
         let parsed = [];
         try {
-          parsed = JSON.parse(content);
+          parsed = extractJsonArrayFromText(content);
         } catch {
-          const firstBracket = content.indexOf('[');
-          const lastBracket = content.lastIndexOf(']');
-          if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
-            try {
-              parsed = JSON.parse(content.substring(firstBracket, lastBracket + 1));
-            } catch {
-              setHotelState(prev => ({ ...prev, error: 'Sorry, could not parse hotel data.', loading: false, lastSearched: true }));
-              setShouldFetch(false);
-              return;
-            }
-          } else {
-            setHotelState(prev => ({ ...prev, error: 'Sorry, could not find hotel data.', loading: false, lastSearched: true }));
-            setShouldFetch(false);
-            return;
-          }
+          setHotelState(prev => ({ ...prev, error: 'Sorry, could not parse hotel data.', loading: false, lastSearched: true }));
+          setShouldFetch(false);
+          return;
         }
         setHotelState(prev => ({ ...prev, hotels: parsed, loading: false, error: '', lastSearched: true }));
         setShouldFetch(false);

@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Header from "./components/Header";
+import TravelPlanningTabs from "./components/TravelPlanningTabs";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import QuestionnairePage from "./pages/QuestionnairePage";
@@ -23,23 +24,37 @@ function ScrollToTop() {
   return null;
 }
 
+function AppContent() {
+  const location = useLocation();
+  
+  // Show tabs only when user is in the questionnaire flow (not on home or login)
+  const shouldShowTabs = !['/', '/login'].includes(location.pathname);
+
+  return (
+    <>
+      <ScrollToTop />
+      <Header />
+      {shouldShowTabs && <TravelPlanningTabs />}
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/questionnaire" element={<QuestionnairePage />} />
+        <Route path="/preferences" element={<PreferencesPage />} />
+        <Route path="/places" element={<PlacesPage />} />
+        <Route path="/itinerary" element={<ItineraryPage />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <ScrollToTop />
-        <Header />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/questionnaire" element={<QuestionnairePage />} />
-          <Route path="/preferences" element={<PreferencesPage />} />
-          <Route path="/places" element={<PlacesPage />} />
-          <Route path="/itinerary" element={<ItineraryPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AppContent />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
