@@ -4,8 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { MapPin, Settings, Calendar, AlertTriangle } from "lucide-react";
+import { MapPin, Settings, Calendar, AlertTriangle, Box } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { PackingDetails } from "./TravelQuestionnaire";
 
 const TravelPlanningTabs = () => {
   const [activeTab, setActiveTab] = useState("questionnaire");
@@ -200,6 +201,14 @@ const TravelPlanningTabs = () => {
     return () => clearInterval(interval);
   }, [lastTabData]);
 
+  useEffect(() => {
+    const tab = sessionStorage.getItem('autoSelectTab');
+    if (tab) {
+      setActiveTab(tab);
+      sessionStorage.removeItem('autoSelectTab');
+    }
+  }, [location.pathname]);
+
   const handleTabChange = (newTab: string) => {
     // If trying to go to a later step without completing previous steps
     if (newTab === 'categories' && !isQuestionnaireCompleted()) {
@@ -275,7 +284,7 @@ const TravelPlanningTabs = () => {
   return (
     <div className="max-w-6xl mx-auto px-4">
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-8 bg-white/80 backdrop-blur-sm shadow-lg border-0 h-14">
+        <TabsList className="grid w-full grid-cols-4 mb-8 bg-white/80 backdrop-blur-sm shadow-lg border-0 h-14">
           <TabsTrigger 
             value="questionnaire" 
             className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white font-medium transition-all duration-300"
@@ -310,6 +319,13 @@ const TravelPlanningTabs = () => {
               <div className="w-2 h-2 bg-green-500 rounded-full ml-1"></div>
             )}
           </TabsTrigger>
+          <TabsTrigger
+            value="packing"
+            className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white font-medium transition-all duration-300"
+          >
+            <Box className="w-4 h-4" />
+            Packing
+          </TabsTrigger>
         </TabsList>
 
         {/* Warning Dialog */}
@@ -331,6 +347,11 @@ const TravelPlanningTabs = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Remove PackingDetails from the packing tab to avoid duplicate checklist on /packing */}
+        {/* <TabsContent value="packing">
+          <PackingDetails />
+        </TabsContent> */}
       </Tabs>
     </div>
   );

@@ -11,6 +11,7 @@ import QuestionnairePage from "./pages/QuestionnairePage";
 import PreferencesPage from "./pages/PreferencesPage";
 import PlacesPage from "./pages/PlacesPage";
 import ItineraryPage from "./pages/ItineraryPage";
+import PackingPage from "./pages/PackingPage";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 
@@ -42,6 +43,7 @@ function AppContent() {
         <Route path="/preferences" element={<PreferencesPage />} />
         <Route path="/places" element={<PlacesPage />} />
         <Route path="/itinerary" element={<ItineraryPage />} />
+        <Route path="/packing" element={<PackingPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

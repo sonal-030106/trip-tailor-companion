@@ -510,7 +510,7 @@ export const TravelQuestionnaire = () => {
           </TabsContent>
 
           <TabsContent value="packing" className="animate-fade-in flex-1 mt-0">
-            <PackingDetails formData={formData} setFormData={handleFormDataChange} />
+            <PackingDetails />
           </TabsContent>
 
           <TabsContent value="questions" className="animate-fade-in flex-1 mt-0">
@@ -588,7 +588,7 @@ export const TravelQuestionnaire = () => {
                       </label>
                       <textarea 
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        rows="3"
+                        rows={3}
                         placeholder="e.g., Photography, Yoga, Local crafts, History..."
                         value={formData.interests || ''}
                         onChange={(e) => setFormData(prev => ({ ...prev, interests: e.target.value }))}
@@ -601,7 +601,7 @@ export const TravelQuestionnaire = () => {
                       </label>
                       <textarea 
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        rows="2"
+                        rows={2}
                         placeholder="e.g., Vegetarian, Gluten-free, Allergies..."
                         value={formData.dietaryRestrictions || ''}
                         onChange={(e) => setFormData(prev => ({ ...prev, dietaryRestrictions: e.target.value }))}
@@ -674,126 +674,134 @@ export const TravelQuestionnaire = () => {
 };
 
 // Packing Details Component
-const PackingDetails = ({ formData, setFormData }) => {
+export const PackingDetails = () => {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedItems, setSelectedItems] = useState({});
 
-  const packingCategories = [
-    {
-      name: "Clothing & Accessories",
-      icon: "👕",
-      items: [
-        "T-shirts/Shirts",
-        "Pants/Jeans",
-        "Dresses/Skirts",
-        "Underwear",
-        "Socks",
-        "Pajamas",
-        "Swimwear",
-        "Jacket/Sweater",
-        "Shoes (Comfortable)",
-        "Shoes (Formal)",
-        "Hat/Cap",
-        "Sunglasses",
-        "Jewelry",
-        "Watch"
-      ]
-    },
-    {
-      name: "Toiletries & Personal Care",
-      icon: "🧴",
-      items: [
-        "Toothbrush & Toothpaste",
-        "Shampoo & Conditioner",
-        "Soap/Body Wash",
-        "Deodorant",
-        "Hair Brush/Comb",
-        "Hair Products",
-        "Skincare Products",
-        "Makeup",
-        "Razor & Shaving Cream",
-        "Nail Clippers",
-        "Contact Lenses & Solution",
-        "Glasses",
-        "Sunscreen",
-        "Insect Repellent",
-        "First Aid Kit"
-      ]
-    },
-    {
-      name: "Electronics & Gadgets",
-      icon: "📱",
-      items: [
-        "Phone & Charger",
-        "Power Bank",
-        "Camera",
-        "Laptop & Charger",
-        "Tablet",
-        "Headphones/Earphones",
-        "Universal Adapter",
-        "USB Cables",
-        "Memory Cards",
-        "Portable Speaker",
-        "E-reader"
-      ]
-    },
-    {
-      name: "Travel Essentials",
-      icon: "🎒",
-      items: [
-        "Passport/ID",
-        "Travel Documents",
-        "Credit/Debit Cards",
-        "Cash",
-        "Travel Insurance",
-        "Maps/Guidebooks",
-        "Notebook & Pen",
-        "Water Bottle",
-        "Snacks",
-        "Umbrella/Raincoat",
-        "Travel Pillow",
-        "Eye Mask",
-        "Ear Plugs",
-        "Travel Lock",
-        "Laundry Bag"
-      ]
-    },
-    {
-      name: "Health & Wellness",
-      icon: "💊",
-      items: [
-        "Prescription Medications",
-        "Pain Relievers",
-        "Allergy Medicine",
-        "Motion Sickness Pills",
-        "Vitamins",
-        "Hand Sanitizer",
-        "Face Masks",
-        "Tissues",
-        "Lip Balm",
-        "Eye Drops",
-        "Band-Aids",
-        "Thermometer"
-      ]
-    },
-    {
-      name: "Entertainment & Activities",
-      icon: "🎮",
-      items: [
-        "Books/Magazines",
-        "Playing Cards",
-        "Travel Games",
-        "Music Playlist",
-        "Movies/TV Shows",
-        "Journal",
-        "Art Supplies",
-        "Fitness Gear",
-        "Yoga Mat",
-        "Beach Towel",
-        "Beach Toys"
-      ]
-    }
-  ];
+  // Use AI-generated packing list if available
+  let aiPackingList = null;
+  try {
+    aiPackingList = JSON.parse(sessionStorage.getItem('packingList'));
+  } catch {}
+
+  const packingCategories = aiPackingList && aiPackingList.categories && Array.isArray(aiPackingList.categories)
+    ? aiPackingList.categories.map(cat => ({ name: cat.name, icon: '', items: cat.items }))
+    : [
+      {
+        name: "Clothing & Accessories",
+        icon: "👕",
+        items: [
+          "T-shirts/Shirts",
+          "Pants/Jeans",
+          "Dresses/Skirts",
+          "Underwear",
+          "Socks",
+          "Pajamas",
+          "Swimwear",
+          "Jacket/Sweater",
+          "Shoes (Comfortable)",
+          "Shoes (Formal)",
+          "Hat/Cap",
+          "Sunglasses",
+          "Jewelry",
+          "Watch"
+        ]
+      },
+      {
+        name: "Toiletries & Personal Care",
+        icon: "🧴",
+        items: [
+          "Toothbrush & Toothpaste",
+          "Shampoo & Conditioner",
+          "Soap/Body Wash",
+          "Deodorant",
+          "Hair Brush/Comb",
+          "Hair Products",
+          "Skincare Products",
+          "Makeup",
+          "Razor & Shaving Cream",
+          "Nail Clippers",
+          "Contact Lenses & Solution",
+          "Glasses",
+          "Sunscreen",
+          "Insect Repellent",
+          "First Aid Kit"
+        ]
+      },
+      {
+        name: "Electronics & Gadgets",
+        icon: "📱",
+        items: [
+          "Phone & Charger",
+          "Power Bank",
+          "Camera",
+          "Laptop & Charger",
+          "Tablet",
+          "Headphones/Earphones",
+          "Universal Adapter",
+          "USB Cables",
+          "Memory Cards",
+          "Portable Speaker",
+          "E-reader"
+        ]
+      },
+      {
+        name: "Travel Essentials",
+        icon: "🎒",
+        items: [
+          "Passport/ID",
+          "Travel Documents",
+          "Credit/Debit Cards",
+          "Cash",
+          "Travel Insurance",
+          "Maps/Guidebooks",
+          "Notebook & Pen",
+          "Water Bottle",
+          "Snacks",
+          "Umbrella/Raincoat",
+          "Travel Pillow",
+          "Eye Mask",
+          "Ear Plugs",
+          "Travel Lock",
+          "Laundry Bag"
+        ]
+      },
+      {
+        name: "Health & Wellness",
+        icon: "💊",
+        items: [
+          "Prescription Medications",
+          "Pain Relievers",
+          "Allergy Medicine",
+          "Motion Sickness Pills",
+          "Vitamins",
+          "Hand Sanitizer",
+          "Face Masks",
+          "Tissues",
+          "Lip Balm",
+          "Eye Drops",
+          "Band-Aids",
+          "Thermometer"
+        ]
+      },
+      {
+        name: "Entertainment & Activities",
+        icon: "🎮",
+        items: [
+          "Books/Magazines",
+          "Playing Cards",
+          "Travel Games",
+          "Music Playlist",
+          "Movies/TV Shows",
+          "Journal",
+          "Art Supplies",
+          "Fitness Gear",
+          "Yoga Mat",
+          "Beach Towel",
+          "Beach Toys"
+        ]
+      }
+    ];
 
   // Load existing packing data from sessionStorage
   useEffect(() => {
@@ -808,18 +816,11 @@ const PackingDetails = ({ formData, setFormData }) => {
     }
   }, []);
 
-  // Save packing data to sessionStorage and update form data
+  // Save packing data to sessionStorage
   useEffect(() => {
     sessionStorage.setItem('packingCategories', JSON.stringify(selectedCategories));
     sessionStorage.setItem('packingItems', JSON.stringify(selectedItems));
-    
-    // Update form data with packing information
-    setFormData(prev => ({
-      ...prev,
-      packingCategories: selectedCategories,
-      packingItems: selectedItems
-    }));
-  }, [selectedCategories, selectedItems, setFormData]);
+  }, [selectedCategories, selectedItems]);
 
   const toggleCategory = (categoryName) => {
     setSelectedCategories(prev => 
@@ -875,49 +876,11 @@ const PackingDetails = ({ formData, setFormData }) => {
                 </div>
                 <Checkbox
                   checked={selectedCategories.includes(category.name)}
-                  onChange={() => toggleCategory(category.name)}
+                  onCheckedChange={() => toggleCategory(category.name)}
                   className="w-4 h-4"
                 />
               </div>
             </CardHeader>
-            
-            {selectedCategories.includes(category.name) && (
-              <CardContent className="pt-0">
-                <div className="space-y-3">
-                  <div className="flex gap-2 mb-3">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => selectAllInCategory(category.name)}
-                      className="text-xs"
-                    >
-                      Select All
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => deselectAllInCategory(category.name)}
-                      className="text-xs"
-                    >
-                      Clear All
-                    </Button>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 gap-2">
-                    {category.items.map((item) => (
-                      <div key={item} className="flex items-center gap-2">
-                        <Checkbox
-                          checked={selectedItems[category.name]?.includes(item) || false}
-                          onChange={() => toggleItem(category.name, item)}
-                          className="w-3 h-3"
-                        />
-                        <span className="text-sm text-gray-700">{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            )}
           </Card>
         ))}
       </div>

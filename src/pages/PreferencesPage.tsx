@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { createHash } from 'crypto'; // If using Node.js, otherwise use a browser hash function
+import { toast } from "@/hooks/use-toast";
+import { generatePackingListWithAI } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface FormData {
   destination: string;
@@ -9,10 +13,10 @@ interface FormData {
   budget: string;
   travelStyle: string;
   groupSize: string;
-  interests: string[];
+  interests: string;
   accommodationType: string;
   transportationType: string;
-  dietaryRestrictions: string[];
+  dietaryRestrictions: string;
   accessibilityNeeds: string[];
   specialRequests: string;
 }
@@ -138,7 +142,7 @@ const categories = [
 
 // Use Vite env variable for Together.ai API key
 const TOGETHER_API_KEY = import.meta.env.VITE_TOGETHER_API_KEY || "YOUR_TOGETHER_API_KEY"; // Set VITE_TOGETHER_API_KEY in your .env file
-const TOGETHER_MODEL = "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free"; // updated model name
+const TOGETHER_MODEL = "mistralai/Mixtral-8x7B-Instruct-v0.1"; // updated model name
 
 // JSON repair utility function
 function repairJsonString(jsonString) {
@@ -626,10 +630,10 @@ export default function PreferencesPage() {
     budget: "",
     travelStyle: "",
     groupSize: "",
-    interests: [],
+    interests: "",
     accommodationType: "",
     transportationType: "",
-    dietaryRestrictions: [],
+    dietaryRestrictions: "",
     accessibilityNeeds: [],
     specialRequests: "",
   });
@@ -673,6 +677,12 @@ export default function PreferencesPage() {
   const [estimatedTime, setEstimatedTime] = useState<number>(8); // seconds
   const [currentLoadingType, setCurrentLoadingType] = useState<string>('');
   const [isDataProcessed, setIsDataProcessed] = useState(false);
+  const [packingList, setPackingList] = useState(null);
+  const [showPackingModal, setShowPackingModal] = useState(false);
+  const [packingLoading, setPackingLoading] = useState(false);
+  const [packingError, setPackingError] = useState("");
+  // Add this state at the top of the PreferencesPage component
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   // Loading component with progress and time estimation for PreferencesPage
   const LoadingSpinner = ({ type, categoryName }) => {
@@ -1281,7 +1291,20 @@ Respond with ONLY the JSON array:`
     return (
       <div key={category} className="border rounded-lg p-4 mb-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">{category}</h3>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              checked={selectedCategories.includes(category)}
+              onCheckedChange={(checked) => {
+                setSelectedCategories(prev =>
+                  checked
+                    ? [...prev, category]
+                    : prev.filter(c => c !== category)
+                );
+              }}
+              className="accent-blue-500 w-5 h-5"
+            />
+            <h3 className="text-lg font-semibold">{category}</h3>
+          </div>
           <div className="flex gap-2">
             {!hasPlaces && !isLoading && (
               <Button
@@ -1337,6 +1360,78 @@ Respond with ONLY the JSON array:`
       </div>
     );
   };
+
+  async function handleGeneratePackingList() {
+    setPackingLoading(true);
+    setPackingError("");
+    setShowPackingModal(true);
+    try {
+      // Gather trip details
+      const packingData = {
+        destination,
+        startDate: location.state?.startDate || sessionStorage.getItem('startDate') || '',
+        endDate: location.state?.endDate || sessionStorage.getItem('endDate') || '',
+        numberOfDays: location.state?.days || sessionStorage.getItem('days') || '',
+        travelCompanion: location.state?.travelCompanion || sessionStorage.getItem('travelCompanion') || '',
+        budget: location.state?.budget || sessionStorage.getItem('budget') || '',
+        transport: location.state?.transport || sessionStorage.getItem('transport') || '',
+        weather: sessionStorage.getItem('weather') || '',
+        preferences: sessionStorage.getItem('preferences') || '',
+      };
+      sessionStorage.setItem('packingData', JSON.stringify(packingData));
+
+      // Create a hash of the trip data
+      const dataString = JSON.stringify(packingData);
+      function hashFnv32a(str) {
+        let hval = 0x811c9dc5;
+        for (let i = 0; i < str.length; ++i) {
+          hval ^= str.charCodeAt(i);
+          hval += (hval << 1) + (hval << 4) + (hval << 7) + (hval << 8) + (hval << 24);
+        }
+        return (hval >>> 0).toString(16);
+      }
+      const packingHash = hashFnv32a(dataString);
+      sessionStorage.setItem('packingHash', packingHash);
+
+      // Check if packing list for this hash already exists
+      const cachedPackingList = sessionStorage.getItem(`packingList_${packingHash}`);
+      if (cachedPackingList) {
+        sessionStorage.setItem('packingList', cachedPackingList);
+      } else {
+        // Use shared utility for AI call
+        const aiPacking = await generatePackingListWithAI({
+          ...packingData,
+          apiKey: TOGETHER_API_KEY,
+          model: TOGETHER_MODEL,
+        });
+        sessionStorage.setItem('packingList', JSON.stringify(aiPacking));
+        sessionStorage.setItem(`packingList_${packingHash}`, JSON.stringify(aiPacking));
+      }
+
+      setShowPackingModal(false);
+      sessionStorage.setItem('autoSelectTab', 'packing');
+      navigate('/packing');
+      setTimeout(() => {
+        if (window && window.sessionStorage) {
+          window.sessionStorage.setItem('autoSelectTab', 'packing');
+        }
+      }, 500);
+      toast({
+        title: 'Packing List Ready',
+        description: 'Your AI-generated packing list is ready in the Packing tab.',
+        variant: 'default',
+      });
+    } catch (err) {
+      setPackingError("Failed to generate packing list. Please try again.");
+      toast({
+        title: 'Packing List Error',
+        description: 'Failed to generate AI packing list. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setPackingLoading(false);
+    }
+  }
 
   return (
     <div className="max-w-5xl mx-auto py-10 px-2">
@@ -1664,14 +1759,45 @@ Respond with ONLY the JSON array:`
               {location.state?.days || sessionStorage.getItem('days') || '0'}-day trip
             </div>
           </div>
-          
-          {/* Generate button */}
+          {/* Generate Packing List button */}
+          <button
+            className="bg-green-500 text-white px-8 py-3 rounded-full shadow-lg font-bold text-lg hover:bg-green-600 transition"
+            onClick={handleGeneratePackingList}
+          >
+            Generate Packing List
+          </button>
+          {/* Generate Itinerary button */}
           <button
             className="bg-blue-600 text-white px-8 py-4 rounded-full shadow-lg font-bold text-lg hover:bg-blue-700 transition"
             onClick={handleShowItinerary}
           >
             Generate Itinerary
           </button>
+        </div>
+      )}
+      {/* Packing List Modal */}
+      {showPackingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-lg w-full relative">
+            <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700" onClick={() => setShowPackingModal(false)}>&times;</button>
+            <h2 className="text-2xl font-bold mb-4 text-center">AI Packing List</h2>
+            {packingLoading && <div className="text-center text-blue-600">Generating packing list...</div>}
+            {packingError && <div className="text-center text-red-600">{packingError}</div>}
+            {packingList && packingList.categories && (
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {packingList.categories.map((cat, idx) => (
+                  <div key={idx}>
+                    <div className="font-semibold text-lg mb-1">{cat.name}</div>
+                    <ul className="list-disc list-inside text-gray-700">
+                      {cat.items.map((item, i) => (
+                        <li key={i}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
       

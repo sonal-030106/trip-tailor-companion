@@ -12,12 +12,14 @@ const together = new Together({
   apiKey: process.env.TOGETHER_API_KEY,
 });
 
+console.log('TOGETHER_API_KEY:', process.env.TOGETHER_API_KEY);
+
 app.post('/api/chat', async (req, res) => {
-  const { messages } = req.body;
+  const { messages, model } = req.body;
   try {
     const response = await together.chat.completions.create({
       messages,
-      model: 'deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free',
+      model: model || 'mistralai/Mixtral-8x7B-Instruct-v0.1',
     });
     res.json(response);
   } catch (error) {

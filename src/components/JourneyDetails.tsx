@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -18,6 +18,22 @@ interface JourneyDetailsProps {
 }
 
 export const JourneyDetails = ({ formData, setFormData }: JourneyDetailsProps) => {
+  // Automatically update endDate when startDate or numberOfDays changes
+  useEffect(() => {
+    if (formData.startDate && formData.numberOfDays) {
+      const start = new Date(formData.startDate);
+      const days = parseInt(formData.numberOfDays, 10);
+      if (!isNaN(start.getTime()) && !isNaN(days)) {
+        const end = new Date(start);
+        end.setDate(start.getDate() + days - 1); // inclusive of start date
+        const endDateStr = end.toISOString().split('T')[0];
+        if (formData.endDate !== endDateStr) {
+          setFormData(prev => ({ ...prev, endDate: endDateStr }));
+        }
+      }
+    }
+  }, [formData.startDate, formData.numberOfDays]);
+
   return (
     <CardContent className="space-y-4 max-h-[70vh] overflow-y-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

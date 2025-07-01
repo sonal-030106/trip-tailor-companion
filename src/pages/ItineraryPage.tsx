@@ -16,6 +16,7 @@ const cityDescriptions: Record<string, string> = {
   // Add more cities as needed
 };
 
+
 const ItineraryPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -281,6 +282,7 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
         messages: [
           { role: 'system', content: 'You are a helpful travel assistant.' },
           { role: 'user', content: prompt }
@@ -1140,7 +1142,15 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
                         </h2>
                         <p className="text-gray-600">{day.activities.map(a => a.description).filter(Boolean).join(' | ')}</p>
                       </div>
-                      <button className="flex items-center gap-2 border px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 bg-white shadow">
+                      <button
+                        className="flex items-center gap-2 border px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 bg-white shadow"
+                        onClick={() => {
+                          const firstPlace = day.activities[0]?.name;
+                          if (firstPlace) {
+                            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(firstPlace)}`, '_blank');
+                          }
+                        }}
+                      >
                         <span>Get Directions</span>
                         <MapPin className={`w-4 h-4 ${iconColor[selectedDay % 3]}`} />
                       </button>
