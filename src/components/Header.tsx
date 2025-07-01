@@ -14,6 +14,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { db } from "@/firebase";
+import { collection, addDoc, getDocs, query, where, deleteDoc, doc } from "firebase/firestore";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -64,16 +66,19 @@ const Header = () => {
   };
 
   // Function to save current itinerary
-  const saveCurrentItinerary = () => {
+  const saveCurrentItinerary = async () => {
     try {
+      if (!user) {
+        alert('You must be logged in to save itineraries.');
+        return;
+      }
       const destination = sessionStorage.getItem('destination');
       const generatedItinerary = sessionStorage.getItem('generatedItinerary');
       const selectedPlaces = sessionStorage.getItem('selectedPlaces');
       const selectedHotel = sessionStorage.getItem('selectedHotel');
-      
       if (destination && generatedItinerary) {
         const itineraryData = {
-          id: Date.now(),
+          userId: user.uid,
           destination,
           date: new Date().toLocaleDateString(),
           places: selectedPlaces ? JSON.parse(selectedPlaces) : [],
@@ -81,22 +86,45 @@ const Header = () => {
           itinerary: generatedItinerary,
           timestamp: new Date().toISOString()
         };
-
-        const existing = localStorage.getItem('savedItineraries');
-        const saved = existing ? JSON.parse(existing) : [];
-        const updated = [itineraryData, ...saved].slice(0, 10); // Keep only last 10
-        
-        localStorage.setItem('savedItineraries', JSON.stringify(updated));
-        setSavedItineraries(updated);
-        
-        // Show success message
+        await addDoc(collection(db, 'itineraries'), itineraryData);
         alert('Itinerary saved successfully!');
+        // Refresh saved itineraries
+        fetchSavedItineraries();
       } else {
         alert('No itinerary to save. Please generate an itinerary first.');
       }
     } catch (error) {
       console.error('Error saving itinerary:', error);
       alert('Error saving itinerary. Please try again.');
+    }
+  };
+
+  // Function to fetch saved itineraries for the logged-in user
+  const fetchSavedItineraries = async () => {
+    if (!user) return;
+    try {
+      setSavedItineraries([]); // Optionally show loading state
+      const q = query(collection(db, 'itineraries'), where('userId', '==', user.uid));
+      const querySnapshot = await getDocs(q);
+      const itineraries = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setSavedItineraries(itineraries);
+    } catch (error) {
+      console.error('Error fetching itineraries:', error);
+    }
+  };
+
+  // Fetch itineraries when user logs in
+  useEffect(() => {
+    if (user) fetchSavedItineraries();
+  }, [user]);
+
+  // Function to delete saved itinerary from Firestore
+  const deleteSavedItinerary = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'itineraries', id));
+      setSavedItineraries(prev => prev.filter(item => item.id !== id));
+    } catch (error) {
+      console.error('Error deleting itinerary:', error);
     }
   };
 
@@ -116,17 +144,6 @@ const Header = () => {
     } catch (error) {
       console.error('Error loading itinerary:', error);
       alert('Error loading itinerary. Please try again.');
-    }
-  };
-
-  // Function to delete saved itinerary
-  const deleteSavedItinerary = (id: number) => {
-    try {
-      const updated = savedItineraries.filter(item => item.id !== id);
-      localStorage.setItem('savedItineraries', JSON.stringify(updated));
-      setSavedItineraries(updated);
-    } catch (error) {
-      console.error('Error deleting itinerary:', error);
     }
   };
 
