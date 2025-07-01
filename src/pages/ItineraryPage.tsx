@@ -276,8 +276,7 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
         }
       ]
     }
-  ]
-}`;
+  ]}`;
     fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -306,7 +305,18 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
         setError('Failed to fetch quick itinerary. Please try again.');
         setLoading(false);
       });
-  }, []);
+  }, [
+    location.state, 
+    selectedPlaces, 
+    selectedHotels, 
+    destination, 
+    numberOfDays, 
+    foodOptions, 
+    startDate, 
+    transport, 
+    travelCompanion, 
+    budget
+  ]);
 
   // Function to manually construct JSON from text when parsing fails
   function constructJSONFromText(text) {
@@ -368,6 +378,61 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
     }
     
     return null;
+  }
+
+  function validateAndFixJSON(jsonString) {
+    let fixedJSON = jsonString;
+
+    // Remove trailing commas from within property names (e.g., "day, ": 1 -> "day": 1)
+    fixedJSON = fixedJSON.replace(/"([^",]+),\s*"\s*:/g, '"$1":');
+
+    // Remove trailing commas from within string values (e.g., "value, " -> "value")
+    fixedJSON = fixedJSON.replace(/",\s*([,}\]])/g, '"$1');
+    
+    // Fix missing commas between properties (e.g. "prop1": "val1" "prop2": "val2" -> "prop1": "val1", "prop2": "val2")
+    fixedJSON = fixedJSON.replace(/\"\s*\"/g, '", "');
+
+    // Remove trailing commas before closing braces and brackets
+    fixedJSON = fixedJSON.replace(/,\s*(}|])/g, '$1');
+
+    try {
+      // Attempt to parse the cleaned JSON
+      return JSON.parse(fixedJSON);
+    } catch (e) {
+      console.error('Initial JSON parsing failed, attempting more advanced fixing...', e.message);
+    }
+    
+    // If parsing fails, try more aggressive fixes
+    try {
+      const cleaned = fixedJSON
+        .replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":')
+        .replace(/,\s*([}\]])/g, '$1');
+
+      const result = JSON.parse(cleaned);
+      console.log('JSON parsing successful after advanced fixes');
+      return result;
+    } catch (fixError) {
+        console.error('JSON fixing also failed:', fixError.message);
+        
+        const jsonMatch = fixedJSON.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            const result = JSON.parse(jsonMatch[0]);
+            console.log('JSON extraction successful');
+            return result;
+          } catch (extractError) {
+            console.error('JSON extraction also failed:', extractError.message);
+          }
+        }
+        
+        console.log('All parsing attempts failed. Returning fallback structure.');
+        return {
+          itinerary: [{
+            day: 1,
+            places: [{ name: 'Error: Could not parse itinerary' }]
+          }]
+        };
+    }
   }
 
   function parseQuickItinerary(text) {
@@ -435,232 +500,6 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
       
       console.log('No valid JSON braces found');
       return null;
-    }
-    
-    // Function to validate and fix common JSON issues
-    function validateAndFixJSON(jsonString) {
-      console.log('Validating and fixing JSON...');
-      console.log('Input JSON length:', jsonString.length);
-      
-      try {
-        // Try to parse as-is first
-        const parsed = JSON.parse(jsonString);
-        console.log('JSON parsed successfully on first attempt');
-        return parsed;
-      } catch (error) {
-        console.log('Initial JSON validation failed:', error.message);
-        console.log('Error position:', error.message);
-        
-        // Check if JSON is incomplete (missing closing brace)
-        let fixedJSON = jsonString;
-        
-        // Fix missing colons after property names (most common issue)
-        fixedJSON = fixedJSON.replace(/"([^"]+)"\s+([^",\{\}\[\]\s][^,\{\}\[\]]*[^",\{\}\[\]\s])\s*([,}\]])/g, '"$1": $2$3');
-        console.log('Fixed missing colons after property names');
-        
-        // Fix missing colons with quoted values
-        fixedJSON = fixedJSON.replace(/"([^"]+)"\s+"([^"]*)"\s*([,}\]])/g, '"$1": "$2"$3');
-        console.log('Fixed missing colons with quoted values');
-        
-        // Fix missing colons with array values
-        fixedJSON = fixedJSON.replace(/"([^"]+)"\s+\[([^\]]*)\]\s*([,}\]])/g, '"$1": [$2]$3');
-        console.log('Fixed missing colons with array values');
-        
-        // Fix missing colons with object values
-        fixedJSON = fixedJSON.replace(/"([^"]+)"\s+\{([^}]*)\}\s*([,}\]])/g, '"$1": {$2}$3');
-        console.log('Fixed missing colons with object values');
-        
-        // Count opening and closing braces
-        const openBraces = (fixedJSON.match(/\{/g) || []).length;
-        const closeBraces = (fixedJSON.match(/\}/g) || []).length;
-        
-        console.log(`Brace count - Open: ${openBraces}, Close: ${closeBraces}`);
-        
-        // Add missing closing braces
-        if (closeBraces < openBraces) {
-          const missingBraces = openBraces - closeBraces;
-          fixedJSON = fixedJSON + '}'.repeat(missingBraces);
-          console.log(`Added ${missingBraces} missing closing braces`);
-        }
-        
-        // Check for incomplete arrays or objects
-        const lastChar = fixedJSON.trim().slice(-1);
-        if (lastChar === ',') {
-          fixedJSON = fixedJSON.slice(0, -1);
-          console.log('Removed trailing comma');
-        }
-        
-        // Fix incomplete array elements (missing closing brackets)
-        const openBrackets = (fixedJSON.match(/\[/g) || []).length;
-        const closeBrackets = (fixedJSON.match(/\]/g) || []).length;
-        
-        if (closeBrackets < openBrackets) {
-          const missingBrackets = openBrackets - closeBrackets;
-          fixedJSON = fixedJSON + ']'.repeat(missingBrackets);
-          console.log(`Added ${missingBrackets} missing closing brackets`);
-        }
-        
-        // Fix incomplete object properties (missing closing braces after adding brackets)
-        const finalOpenBraces = (fixedJSON.match(/\{/g) || []).length;
-        const finalCloseBraces = (fixedJSON.match(/\}/g) || []).length;
-        
-        if (finalCloseBraces < finalOpenBraces) {
-          const missingBraces = finalOpenBraces - finalCloseBraces;
-          fixedJSON = fixedJSON + '}'.repeat(missingBraces);
-          console.log(`Added ${missingBraces} additional missing closing braces`);
-        }
-        
-        // Fix missing commas between array elements
-        // Look for patterns like } { (missing comma)
-        fixedJSON = fixedJSON.replace(/\}\s*\{/g, '}, {');
-        console.log('Fixed missing commas between array elements');
-        
-        // Fix missing commas between object properties
-        // Look for patterns like "key": value "key2": value (missing comma)
-        fixedJSON = fixedJSON.replace(/"([^"]+)"\s*:\s*([^,}\]]+)\s*"([^"]+)"/g, '"$1": $2, "$3"');
-        
-        // Fix empty values in JSON (like "key":  , "key2")
-        fixedJSON = fixedJSON.replace(/"([^"]+)"\s*:\s*,\s*"([^"]+)"/g, '"$1": "", "$2"');
-        fixedJSON = fixedJSON.replace(/"([^"]+)"\s*:\s*,\s*}/g, '"$1": ""}');
-        fixedJSON = fixedJSON.replace(/"([^"]+)"\s*:\s*,\s*]/g, '"$1": ""]');
-        
-        // Fix incomplete property values (like "key": "incomplete)
-        fixedJSON = fixedJSON.replace(/"([^"]+)"\s*:\s*"([^"]*)$/g, '"$1": "$2"');
-        
-        // Fix trailing commas before closing braces/brackets
-        fixedJSON = fixedJSON.replace(/,\s*}/g, '}');
-        fixedJSON = fixedJSON.replace(/,\s*]/g, ']');
-        
-        // Fix missing quotes around string values
-        fixedJSON = fixedJSON.replace(/"([^"]+)"\s*:\s*([^",\{\}\[\]\s][^,\{\}\[\]]*[^",\{\}\[\]\s])\s*([,}\]])/g, '"$1": "$2"$3');
-        
-        // Fix broken property names (like "lRoute" instead of "travelRoute")
-        fixedJSON = fixedJSON.replace(/"lRoute"/g, '"travelRoute"');
-        fixedJSON = fixedJSON.replace(/"travelR"/g, '"travelRoute"');
-        fixedJSON = fixedJSON.replace(/"travelRo"/g, '"travelRoute"');
-        fixedJSON = fixedJSON.replace(/"travelRou"/g, '"travelRoute"');
-        fixedJSON = fixedJSON.replace(/"travelRout"/g, '"travelRoute"');
-        
-        // Fix common AI response issues
-        fixedJSON = fixedJSON.replace(/"activities"\s*:\s*\[([^\]]*)\]/g, (match, content) => {
-          // Fix activities array if it's malformed
-          if (!content.includes('"')) {
-            // If activities don't have quotes, add them
-            const activities = content.split(',').map(activity => 
-              activity.trim().replace(/^["']|["']$/g, '') // Remove existing quotes
-            ).filter(activity => activity.length > 0);
-            return `"activities": [${activities.map(activity => `"${activity}"`).join(', ')}]`;
-          }
-          return match;
-        });
-        
-        // Fix incomplete place objects by adding missing properties
-        const placePattern = /"places":\s*\[([\s\S]*?)\]/g;
-        let placeMatch;
-        while ((placeMatch = placePattern.exec(fixedJSON)) !== null) {
-          const placesContent = placeMatch[1];
-          const placeObjects = placesContent.match(/\{[^}]*\}/g);
-          
-          if (placeObjects) {
-            placeObjects.forEach((placeObj, index) => {
-              // Check if place object is missing required properties
-              const hasName = placeObj.includes('"name"');
-              const hasDescription = placeObj.includes('"description"');
-              const hasTime = placeObj.includes('"time"');
-              const hasTravelRoute = placeObj.includes('"travelRoute"');
-              const hasMeals = placeObj.includes('"meals"');
-              const hasSouvenir = placeObj.includes('"souvenir"');
-              const hasThingsToDo = placeObj.includes('"thingsToDo"');
-              const hasActivities = placeObj.includes('"activities"');
-              const hasTips = placeObj.includes('"tips"');
-              
-              let fixedPlaceObj = placeObj;
-              
-              // Add missing properties
-              if (!hasName) fixedPlaceObj = fixedPlaceObj.replace(/,\s*$/, '') + ', "name": "Unknown Place"';
-              if (!hasDescription) fixedPlaceObj = fixedPlaceObj.replace(/,\s*$/, '') + ', "description": "A must-visit attraction"';
-              if (!hasTime) fixedPlaceObj = fixedPlaceObj.replace(/,\s*$/, '') + ', "time": "2-3 hours"';
-              if (!hasTravelRoute) fixedPlaceObj = fixedPlaceObj.replace(/,\s*$/, '') + ', "travelRoute": "From previous location: walk 10 mins, ₹0"';
-              if (!hasMeals) fixedPlaceObj = fixedPlaceObj.replace(/,\s*$/, '') + ', "meals": "Lunch: Local restaurant"';
-              if (!hasSouvenir) fixedPlaceObj = fixedPlaceObj.replace(/,\s*$/, '') + ', "souvenir": "Local handicrafts available"';
-              if (!hasThingsToDo && !hasActivities) fixedPlaceObj = fixedPlaceObj.replace(/,\s*$/, '') + ', "activities": ["Explore the beautiful architecture", "Take stunning photos", "Learn about the rich history"]';
-              if (!hasTips) fixedPlaceObj = fixedPlaceObj.replace(/,\s*$/, '') + ', "tips": "Best time to visit: morning"';
-              
-              // Replace the original place object
-              fixedJSON = fixedJSON.replace(placeObj, fixedPlaceObj);
-            });
-          }
-        }
-        
-        console.log('Attempting to parse fixed JSON...');
-        console.log('Fixed JSON preview:', fixedJSON.substring(0, 500));
-        
-        // Try parsing the fixed JSON
-        try {
-          const result = JSON.parse(fixedJSON);
-          console.log('JSON parsing successful after fixes');
-          return result;
-        } catch (fixError) {
-          console.error('JSON fixing failed:', fixError.message);
-          console.error('Fixed JSON string length:', fixedJSON.length);
-          console.error('Fixed JSON preview:', fixedJSON.substring(0, 1000));
-          
-          // Last resort: try to extract a valid JSON object from the string
-          const jsonMatch = fixedJSON.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            console.log('Attempting to extract JSON object...');
-            try {
-              const result = JSON.parse(jsonMatch[0]);
-              console.log('JSON extraction successful');
-              return result;
-            } catch (extractError) {
-              console.error('JSON extraction also failed:', extractError.message);
-              
-              // Final fallback: create a minimal valid JSON structure
-              console.log('Creating fallback JSON structure...');
-              return {
-                itinerary: [{
-                  day: 1,
-                  date: '',
-                  dailyCost: '',
-                  dailyTips: '',
-                  places: [{
-                    name: 'Generated Place',
-                    time: '2-3 hours',
-                    description: 'A place to visit',
-                    travelRoute: 'Walking distance',
-                    meals: 'Local restaurant',
-                    souvenir: 'Local shop',
-                    activities: ['Explore the beautiful architecture', 'Take stunning photos', 'Learn about the rich history'],
-                    tips: 'Best time to visit: morning'
-                  }]
-                }]
-              };
-            }
-          }
-          
-          // If no JSON object found, create fallback structure
-          console.log('No JSON object found, creating fallback structure...');
-          return {
-            itinerary: [{
-              day: 1,
-              date: '',
-              dailyCost: '',
-              dailyTips: '',
-              places: [{
-                name: 'Generated Place',
-                time: '2-3 hours',
-                description: 'A place to visit',
-                travelRoute: 'Walking distance',
-                meals: 'Local restaurant',
-                souvenir: 'Local shop',
-                activities: ['Explore the beautiful architecture', 'Take stunning photos', 'Learn about the rich history'],
-                tips: 'Best time to visit: morning'
-              }]
-            }]
-          };
-        }
-      }
     }
     
     try {
