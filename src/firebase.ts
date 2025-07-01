@@ -2,11 +2,12 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
+import { getFirestore } from "firebase/firestore";
 const firebaseConfig = {
     apiKey: "AIzaSyC4f_vFwZmd18NWVNPQZTDDYloKz0xOYD0",
     authDomain: "smart-trip-planner-2d842.firebaseapp.com",
     projectId: "smart-trip-planner-2d842",
-    storageBucket: "smart-trip-planner-2d842.firebasestorage.app",
+    storageBucket: "smart-trip-planner-2d842.appspot.com",
     messagingSenderId: "1020455814664",
     appId: "1:1020455814664:web:e022c38835e93d326b33bd",
     measurementId: "G-WS1D24CV4D"
@@ -15,4 +16,5 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+export const db = getFirestore(app);
 const analytics = getAnalytics(app);

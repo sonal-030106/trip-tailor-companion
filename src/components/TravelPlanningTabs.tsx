@@ -142,6 +142,8 @@ const TravelPlanningTabs = () => {
       setActiveTab('categories');
     } else if (location.pathname === '/itinerary') {
       setActiveTab('itinerary');
+    } else if (location.pathname === '/packing') {
+      setActiveTab('packing');
     }
   }, [location.pathname]);
 
@@ -246,6 +248,9 @@ const TravelPlanningTabs = () => {
     } else if (newTab === 'questionnaire') {
       // Always allow navigation to questionnaire
       navigate('/questionnaire');
+    } else if (newTab === 'packing') {
+      navigate('/packing');
+      return;
     } else {
       // Data hasn't changed, just update the active tab without reloading
       setActiveTab(newTab);

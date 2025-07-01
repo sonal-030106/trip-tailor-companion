@@ -4,6 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation, useNavigate } from "react-router-dom";
 import { generatePackingListWithAI } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { db, auth } from "@/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 
 const TOGETHER_API_KEY = import.meta.env.VITE_TOGETHER_API_KEY || "YOUR_TOGETHER_API_KEY";
 const TOGETHER_MODEL = "mistralai/Mixtral-8x7B-Instruct-v0.1";
@@ -21,6 +24,7 @@ const PackingPage = () => {
   const [customItem, setCustomItem] = useState("");
   const [customCategory, setCustomCategory] = useState("");
   const customInputRef = useRef<HTMLInputElement>(null);
+  const [user, setUser] = useState<any>(null);
 
   // Read trip details
   const destination = location.state?.destination || sessionStorage.getItem('destination') || '';
@@ -48,27 +52,29 @@ const PackingPage = () => {
   const packingHash = hashFnv32a(dataString);
 
   useEffect(() => {
-    // Always load the last packing list from sessionStorage on mount
-    const cached = sessionStorage.getItem('packingList');
-    if (cached) {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    async function loadPackingList() {
+      setLoading(true);
+      setError("");
       try {
-        const parsed = JSON.parse(cached);
-        if (parsed && Array.isArray(parsed.categories)) {
-          setPackingList(parsed);
+        const docRef = doc(db, "packingLists", user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setPackingList(docSnap.data().packingList);
           setLoading(false);
           return;
         }
-      } catch {
-        // Parsing error, clear and force reload
-        sessionStorage.removeItem('packingList');
+      } catch (err: any) {
+        setError("Failed to load packing list from server.");
       }
-    }
-    // If no cached packing list, generate a new one
-    async function fetchPackingList() {
-      setLoading(true);
-      setLoadingStartTime(Date.now());
-      setEstimatedTime(10);
-      setError("");
+      // If not found, generate a new one
       try {
         const aiPacking = await generatePackingListWithAI({
           destination,
@@ -84,16 +90,16 @@ const PackingPage = () => {
           model: TOGETHER_MODEL,
         });
         setPackingList(aiPacking);
-        sessionStorage.setItem('packingList', JSON.stringify(aiPacking));
+        await setDoc(doc(db, "packingLists", user.uid), { packingList: aiPacking });
       } catch (err: any) {
         setError(err.message || "Failed to generate packing list. Please try again.");
       } finally {
         setLoading(false);
       }
     }
-    fetchPackingList();
+    loadPackingList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   // Initialize checkedItems when packingList loads
   useEffect(() => {
