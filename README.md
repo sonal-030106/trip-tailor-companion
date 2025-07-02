@@ -1,73 +1,90 @@
-# Welcome to your Lovable project
+# Trip Tailor Companion
 
-## Project info
+AI-Powered Travel Planner
 
-**URL**: https://lovable.dev/projects/44978829-cee1-4e86-ba3a-25d208a47e41
+---
 
-## How can I edit this code?
+## Project Description
+Trip Tailor Companion (TravelGenie) is an AI-powered web application that helps users create personalized travel itineraries based on their preferences, budget, and travel style. The app provides smart recommendations for destinations, places, hotels, and activities, and generates optimized packing lists for every trip.
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## Technology Stack
+- **Frontend:** React, TypeScript, Vite, TailwindCSS, shadcn/ui, Lucide Icons
+- **Backend:** Express.js, TogetherAI API
+- **Database & Auth:** Firebase (Firestore, Auth, Analytics)
+- **Other:** React Router, React Query, OpenAI/TogetherAI, Radix UI, Recharts
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/44978829-cee1-4e86-ba3a-25d208a47e41) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## Features Implemented
+- User authentication (Firebase Auth)
+- AI-powered travel questionnaire
+- Smart destination, place, and hotel recommendations
+- Flexible date and group travel planning
+- Day-by-day itinerary generation
+- Packing list generation using AI with weather suggestion
+- Save, download, and share itineraries
+- Responsive, modern UI with beautiful gradients and cards
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Setup & Installation
+1. **Clone the repository:**
+   ```bash
+   git clone <your-repo-url>
+   cd trip-tailor-companion
+   ```
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+3. **Set up environment variables:**
+   - Create a `.env` file and add your TogetherAI API key and Firebase config.
+4. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
+5. **Build for production:**
+   ```bash
+   npm run build
+   ```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## Link to Deployed Application
+> [Add your deployment link here]
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## App Flow / System Architecture
 
-# Step 3: Install the necessary dependencies.
-npm i
+![System Architecture Flowchart](public/Flowchart.jpg)
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+---
 
-**Edit a file directly in GitHub**
+## Screenshots
+| Home Page | Category Selection | Itinerary | Packing | Questionnaire |
+|-----------|-------------------|-----------|---------|---------------|
+| ![Home](public/Home.jpg) | ![Category](public/Category.jpg) | ![Itinerary](public/iternary.jpg) | ![Packing](public/Packing.jpg) | ![Questionnaire](public/Questionnaire.jpg) |
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## Team Members & Contributions
+- **Sonal Patil** – Frontend (UI/UX, React, Tailwind, shadcn/ui)
+- **Pradnya Patil** – Backend (Express.js, API integration, Firebase)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## Future Roadmap / Improvements
+- Add user profile and trip history
+- Integrate more travel APIs for real-time data
+- Enable collaborative/group trip planning
+- Add payment and booking integration
+- Improve AI recommendations with user feedback
+- Mobile app version
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/44978829-cee1-4e86-ba3a-25d208a47e41) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Example
+Inspired by: [https://github.com/username/project-name](https://github.com/sonal-030106/trip-tailor-companion.git)
