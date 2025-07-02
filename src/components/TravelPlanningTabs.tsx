@@ -225,6 +225,21 @@ const TravelPlanningTabs = () => {
       return;
     }
 
+    // Save temp itinerary when leaving itinerary tab for categories or packing
+    if (activeTab === 'itinerary' && (newTab === 'categories' || newTab === 'packing')) {
+      const tempItinerary = sessionStorage.getItem('generatedItinerary');
+      if (tempItinerary) {
+        localStorage.setItem('tempItinerary', tempItinerary);
+      }
+    }
+
+    // If switching to itinerary from categories or packing, set a flag to show tempItinerary
+    if ((activeTab === 'categories' || activeTab === 'packing') && newTab === 'itinerary') {
+      sessionStorage.setItem('showTempItinerary', 'true');
+    } else {
+      sessionStorage.removeItem('showTempItinerary');
+    }
+
     // Check if this is the first time loading
     const isFirstTime = isFirstTimeLoading(newTab);
     
@@ -293,6 +308,7 @@ const TravelPlanningTabs = () => {
           <TabsTrigger 
             value="questionnaire" 
             className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white font-medium transition-all duration-300"
+            disabled={activeTab !== 'questionnaire'}
           >
             <MapPin className="w-4 h-4" />
             Questionnaire

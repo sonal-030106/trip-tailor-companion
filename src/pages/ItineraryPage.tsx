@@ -11,6 +11,7 @@ import { db } from "@/firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { auth } from "@/firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
+import { createHash } from 'crypto'; // If not available, use a browser hash function
 
 const cityDescriptions: Record<string, string> = {
   mumbai: "The city of dreams, famous for its vibrant culture, historic landmarks, and delicious street food.",
@@ -115,6 +116,16 @@ const ItineraryPage = () => {
   ];
 
   useEffect(() => {
+    // If showTempItinerary flag is set, load tempItinerary from localStorage
+    if (sessionStorage.getItem('showTempItinerary') === 'true') {
+      const temp = localStorage.getItem('tempItinerary');
+      if (temp) {
+        setQuickText(temp);
+        setLoading(false);
+        setError("");
+        return;
+      }
+    }
     // If a saved itinerary is provided (e.g., from My Itineraries), display it and skip trip details check
     if (location.state?.itinerary) {
       setQuickText(location.state.itinerary);
@@ -302,12 +313,19 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
         setQuickText(content);
         setLoading(false);
         
-        // Store the generated itinerary and data hash for smart loading
-        sessionStorage.setItem('generatedItinerary', content);
-        sessionStorage.setItem('itineraryDataHash', currentDataHash);
-        sessionStorage.setItem('itineraryGenerated', 'true');
-        // Set flag that itinerary has been generated at least once
-        sessionStorage.setItem('itineraryGeneratedOnce', 'true');
+        // When saving the generated itinerary, check if the same itinerary ID is already saved
+        const storedItinerary = sessionStorage.getItem('generatedItinerary');
+        const storedItineraryData = sessionStorage.getItem('itineraryDataHash');
+        // ... existing code ...
+        // Only save if not already saved
+        if ((!storedItinerary || storedItineraryData !== currentDataHash) && content) {
+          sessionStorage.setItem('generatedItinerary', content);
+          sessionStorage.setItem('itineraryDataHash', currentDataHash);
+          sessionStorage.setItem('itineraryGenerated', 'true');
+          // Set flag that itinerary has been generated at least once
+          sessionStorage.setItem('itineraryGeneratedOnce', 'true');
+        }
+        // ... existing code ...
       })
       .catch(() => {
         setError('Failed to fetch quick itinerary. Please try again.');
@@ -818,13 +836,14 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
                     </div>
                   </div>
                   
-                  {/* Save Itinerary Button */}
-                  <div className="mt-6">
+                  {/* Save Itinerary Button at bottom right, bigger and more attractive */}
+                  <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-2">
                     <Button
                       onClick={handleSaveItinerary}
-                      className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                      className="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white font-extrabold text-xl px-12 py-6 rounded-full shadow-2xl hover:shadow-emerald-400/50 transition-all duration-300 transform hover:scale-110"
+                      style={{ boxShadow: '0 8px 32px 0 rgba(34,197,94,0.25), 0 1.5px 8px 0 rgba(59,130,246,0.15)' }}
                     >
-                      💾 Save Itinerary
+                      <span role="img" aria-label="save" className="mr-3">💾</span> Save Itinerary
                     </Button>
                   </div>
                 </div>
@@ -1040,10 +1059,10 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
                                         e.stopPropagation();
                                         window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.name)}`, '_blank');
                                       }}
-                                      className="ml-2 inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-100 text-blue-700 font-semibold text-xs hover:bg-blue-200 transition border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                      className="ml-2 inline-flex items-center gap-1 px-3 py-1 rounded bg-green-100 text-green-700 font-bold text-base hover:bg-green-200 transition border border-green-300 focus:outline-none focus:ring-2 focus:ring-green-400 shadow-md"
                                       aria-label={`Get directions to ${activity.name}`}
                                     >
-                                      <MapPin className="w-4 h-4" />
+                                      <MapPin className="w-5 h-5 text-green-500" />
                                       Directions
                                     </button>
                                   </div>
@@ -1057,12 +1076,12 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
                                 {/* Travel Route with enhanced styling */}
                                 {idx === 0 ? (
                                   // First activity - from hotel/starting point
-                                  <div className="mb-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                                  <div className="mb-4 p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
                                     <div className="flex items-center gap-2 mb-2">
-                                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                                         {getTransportIcon(activity.transport)}
                                       </div>
-                                      <span className="font-semibold text-blue-800 text-base">Starting Journey</span>
+                                      <span className="font-semibold text-green-800 text-base">Starting Journey</span>
                                     </div>
                                     
                                     {/* Check if this is a Best Route with multiple options */}
@@ -1129,12 +1148,12 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
                                   </div>
                                 ) : (
                                   // Subsequent activities - from previous place
-                                  <div className="mb-4 p-3 bg-orange-50 rounded-lg border-l-4 border-orange-400">
+                                  <div className="mb-4 p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
                                     <div className="flex items-center gap-2 mb-2">
-                                      <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                                         {getTransportIcon(activity.transport)}
                                       </div>
-                                      <span className="font-semibold text-orange-800">Travel Route</span>
+                                      <span className="font-semibold text-green-800">Travel Route</span>
                                     </div>
                                     
                                     {/* Check if this is a Best Route with multiple options */}
@@ -1578,6 +1597,12 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
       const selectedPlaces = sessionStorage.getItem('selectedPlaces');
       const selectedHotel = sessionStorage.getItem('selectedHotel');
       if (destination && generatedItinerary) {
+        // Compute a unique hash for this itinerary
+        const itineraryHash = btoa(unescape(encodeURIComponent(JSON.stringify({ destination, selectedPlaces, selectedHotel }))));
+        if (localStorage.getItem('savedItinerary_' + itineraryHash)) {
+          alert('This itinerary is already saved.');
+          return;
+        }
         // Get packing list and checked items from sessionStorage
         const packingList = sessionStorage.getItem('packingList');
         const checkedItems = sessionStorage.getItem('checkedItems');
@@ -1593,6 +1618,7 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
           timestamp: new Date().toISOString()
         };
         await addDoc(collection(db, 'itineraries'), itineraryData);
+        localStorage.setItem('savedItinerary_' + itineraryHash, 'true');
         alert('Itinerary saved successfully!');
       } else {
         alert('No itinerary to save. Please generate an itinerary first.');

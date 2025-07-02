@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { createHash } from 'crypto'; // If using Node.js, otherwise use a browser hash function
@@ -478,10 +478,10 @@ const PlaceCard = ({ place, isSelected, onSelect }) => (
         e.stopPropagation();
         window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}`, '_blank');
       }}
-      className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold text-xs hover:bg-blue-200 transition border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+      className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded bg-green-100 text-green-700 font-bold text-base hover:bg-green-200 transition border border-green-300 focus:outline-none focus:ring-2 focus:ring-green-400 shadow-md"
       aria-label={`Get directions to ${place.name}`}
     >
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-green-500">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7-7.5 11-7.5 11s-7.5-4-7.5-11a7.5 7.5 0 1115 0z" />
       </svg>
@@ -699,6 +699,28 @@ export default function PreferencesPage() {
   const [packingError, setPackingError] = useState("");
   // Add this state at the top of the PreferencesPage component
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
+  const lastPlacesRef = useRef<string[]>([]);
+  const [showGenerateWarning, setShowGenerateWarning] = useState(false);
+  const [showAddPlacesWarning, setShowAddPlacesWarning] = useState(false);
+  const [showTempItinerary, setShowTempItinerary] = useState(() => sessionStorage.getItem('showTempItinerary') === 'true');
+  const [showDisabledWarning, setShowDisabledWarning] = useState(false);
+
+  // Track if we came from itinerary and always update lastPlacesRef when switching from itinerary to categories
+  useEffect(() => {
+    if (sessionStorage.getItem('showTempItinerary') === 'true') {
+      lastPlacesRef.current = selectedPlaces.map(p => p.name);
+    }
+  }, [sessionStorage.getItem('showTempItinerary')]);
+
+  // When places are added after coming from itinerary, show warning
+  useEffect(() => {
+    if (sessionStorage.getItem('showTempItinerary') === 'true') {
+      if (selectedPlaces.length > lastPlacesRef.current.length) {
+        setShowGenerateWarning(true);
+      }
+    }
+  }, [selectedPlaces]);
 
   // Loading component with progress and time estimation for PreferencesPage
   const LoadingSpinner = ({ type, categoryName }) => {
@@ -1190,10 +1212,18 @@ Respond with ONLY the JSON array:`
 
   // Handler for Generate Itinerary button
   const handleShowItinerary = () => {
-    if (selectedPlaces.length === 0) {
-      alert('Please select at least one place to generate an itinerary.');
-      return;
+    // If coming from itinerary and no new places, show add/change warning
+    if (sessionStorage.getItem('showTempItinerary') === 'true') {
+      const lastPlaces = lastPlacesRef.current;
+      const currentPlaces = selectedPlaces.map(p => p.name);
+      if (currentPlaces.length === lastPlaces.length && currentPlaces.every((p, i) => p === lastPlaces[i])) {
+        setShowAddPlacesWarning(true);
+        return;
+      }
     }
+    // Clear tempItinerary and showTempItinerary flag before generating main itinerary
+    localStorage.removeItem('tempItinerary');
+    sessionStorage.removeItem('showTempItinerary');
     
     const allTripDetails = {
       destination: destination,
@@ -1433,12 +1463,43 @@ Respond with ONLY the JSON array:`
     }
   }
 
+  // Add a computed variable to determine if the button should be enabled
+  const canGenerateItinerary = (() => {
+    if (showTempItinerary) {
+      const lastPlaces = lastPlacesRef.current;
+      const currentPlaces = selectedPlaces.map(p => p.name);
+      if (currentPlaces.length > lastPlaces.length) return true;
+      if (!arePlacesEqual(currentPlaces, lastPlaces)) return true;
+      return false;
+    }
+    return selectedPlaces.length > 0;
+  })();
+
+  // Listen for changes to sessionStorage.showTempItinerary (e.g., on tab switch)
+  useEffect(() => {
+    const handler = () => {
+      setShowTempItinerary(sessionStorage.getItem('showTempItinerary') === 'true');
+    };
+    window.addEventListener('storage', handler);
+    // Also check on mount and when the component is focused
+    window.addEventListener('focus', handler);
+    return () => {
+      window.removeEventListener('storage', handler);
+      window.removeEventListener('focus', handler);
+    };
+  }, []);
+
+  // Track if we came from itinerary and always update lastPlacesRef when showTempItinerary changes
+  useEffect(() => {
+    if (showTempItinerary) {
+      lastPlacesRef.current = selectedPlaces.map(p => p.name);
+    }
+  }, [showTempItinerary]);
+
   return (
     <div className="max-w-5xl mx-auto py-10 px-2">
       <div className="text-center mb-8">
-        <h1 className="text-5xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-          Explore Categories
-        </h1>
+        <h2 className="text-4xl font-extrabold text-center mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Explore Categories</h2>
       </div>
       
       {/* Show categories immediately when destination is entered */}
@@ -1455,7 +1516,9 @@ Respond with ONLY the JSON array:`
               className="border rounded-lg px-4 py-2 text-lg w-72"
               placeholder="Enter your destination..."
               value={destination}
-              onChange={(e) => { setDestination(e.target.value); sessionStorage.setItem('destination', e.target.value); }}
+              readOnly
+              tabIndex={-1}
+              style={{ pointerEvents: 'none', backgroundColor: '#f3f4f6' }}
             />
             <button
               className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold text-lg disabled:opacity-50"
@@ -1464,6 +1527,36 @@ Respond with ONLY the JSON array:`
               Next
             </button>
           </div>
+          {selectedPlaces.length > 0 && (
+            <>
+              <div className="flex items-center gap-3 mb-3 px-5 py-3 rounded-xl bg-gradient-to-r from-green-50 via-emerald-50 to-green-100 shadow-md border border-green-200 animate-fade-in">
+                <span className="text-3xl drop-shadow-lg">✅</span>
+                <span className="text-2xl font-extrabold bg-gradient-to-r from-green-600 via-emerald-500 to-lime-500 bg-clip-text text-transparent tracking-wide font-sans" style={{ textShadow: '0 2px 8px rgba(16,185,129,0.15)' }}>
+                  Selected Places
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-3 mb-4">
+                {selectedPlaces.map((place, idx) => (
+                  <span
+                    key={place.name}
+                    className="inline-flex items-center px-5 py-2 rounded-full bg-gradient-to-r from-green-200 via-green-100 to-emerald-100 text-green-900 font-bold shadow-lg border border-green-300 text-lg transition-all duration-200 hover:scale-105 hover:shadow-emerald-200/60 group"
+                    style={{ boxShadow: '0 2px 8px 0 rgba(16,185,129,0.10)' }}
+                  >
+                    <span className="mr-2 text-xl">📍</span>
+                    {place.name}
+                    <button
+                      type="button"
+                      className="ml-3 text-green-700 hover:text-red-600 font-extrabold text-xl focus:outline-none opacity-70 group-hover:opacity-100 transition-all duration-200"
+                      onClick={() => togglePlace(place)}
+                      aria-label={`Remove ${place.name}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 justify-center">
             {categories.map((cat) => (
               <div
@@ -1751,28 +1844,37 @@ Respond with ONLY the JSON array:`
       {selectedPlaces.length > 0 && (
         <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-2">
           {/* Place count indicator */}
-          <div className="bg-white rounded-lg shadow-lg px-4 py-2 text-sm">
-            <div className="font-semibold text-gray-800">
-              {selectedPlaces.length} places selected
+          <div className="bg-gradient-to-r from-green-200 via-emerald-100 to-green-100 px-6 py-3 rounded-xl shadow-md border border-green-300 flex flex-col items-center mb-4">
+            <div className="font-extrabold text-lg text-green-900 flex items-center gap-2">
+              <span className="text-2xl">📍</span> {selectedPlaces.length} places selected
             </div>
-            <div className="text-gray-600">
+            <div className="text-green-800 font-semibold text-base mt-1 tracking-wide">
               {location.state?.days || sessionStorage.getItem('days') || '0'}-day trip
             </div>
           </div>
           {/* Generate Packing List button */}
-          <button
-            className="bg-green-500 text-white px-8 py-3 rounded-full shadow-lg font-bold text-lg hover:bg-green-600 transition"
+          <Button
             onClick={handleGeneratePackingList}
+            className="bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white font-extrabold text-lg px-10 py-4 rounded-full shadow-xl hover:shadow-emerald-400/50 transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
           >
-            Generate Packing List
-          </button>
+            <span role='img' aria-label='packing' className='text-xl'>🧳</span> Generate Packing List
+          </Button>
           {/* Generate Itinerary button */}
-          <button
-            className="bg-blue-600 text-white px-8 py-4 rounded-full shadow-lg font-bold text-lg hover:bg-blue-700 transition"
-            onClick={handleShowItinerary}
-          >
-            Generate Itinerary
-          </button>
+          <div style={{ position: 'relative' }}>
+            <Button
+              onClick={handleShowItinerary}
+              disabled={!canGenerateItinerary}
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-extrabold text-lg px-10 py-4 rounded-full shadow-xl hover:shadow-indigo-400/50 transition-all duration-200 transform hover:scale-105 flex items-center gap-2 mt-2 disabled:opacity-60"
+            >
+              <span role='img' aria-label='itinerary' className='text-xl'>🗺️</span> Generate Itinerary
+            </Button>
+            {showDisabledWarning && (
+              <div className="absolute right-0 mt-2 bg-white border border-gray-300 rounded shadow-lg p-3 z-50 text-sm text-gray-800" style={{ minWidth: 220 }}>
+                Please add or change places before generating a new itinerary.
+                <button className="block mt-2 text-blue-600 underline" onClick={() => setShowDisabledWarning(false)}>OK</button>
+              </div>
+            )}
+          </div>
         </div>
       )}
       {/* Packing List Modal */}
@@ -1808,6 +1910,35 @@ Respond with ONLY the JSON array:`
           categoryName={selectedCategory?.name || selectedSubcategory || 'places'} 
         />
       )}
+      {showGenerateWarning && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
+          <div className="bg-white p-6 rounded shadow-lg max-w-sm w-full">
+            <h2 className="text-lg font-bold mb-2">Places Added</h2>
+            <p className="mb-4">You have added new places. Please click 'Generate Itinerary' to update your itinerary.</p>
+            <button className="bg-blue-500 text-white px-4 py-2 rounded mr-2" onClick={() => setShowGenerateWarning(false)}>OK</button>
+          </div>
+        </div>
+      )}
+      {showAddPlacesWarning && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
+          <div className="bg-white p-6 rounded shadow-lg max-w-sm w-full">
+            <h2 className="text-lg font-bold mb-2">No New Places</h2>
+            <p className="mb-4">Please add or change places before generating a new itinerary.</p>
+            <button className="bg-blue-500 text-white px-4 py-2 rounded mr-2" onClick={() => setShowAddPlacesWarning(false)}>OK</button>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+// Helper to compare two arrays of place names (sorted)
+function arePlacesEqual(a: string[], b: string[]) {
+  if (a.length !== b.length) return false;
+  const aSorted = [...a].sort();
+  const bSorted = [...b].sort();
+  for (let i = 0; i < aSorted.length; i++) {
+    if (aSorted[i] !== bSorted[i]) return false;
+  }
+  return true;
 }
