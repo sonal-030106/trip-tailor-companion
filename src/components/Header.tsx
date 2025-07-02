@@ -55,6 +55,7 @@ const Header = () => {
   const handleLogout = async () => {
     await signOut(auth);
     setUser(null);
+    navigate('/');
   };
 
   // Function to reset session storage when going home
@@ -192,76 +193,78 @@ const Header = () => {
               Trip Planner
             </button>
 
-            {/* My Itineraries Dropdown */}
-            <DropdownMenu open={showItinerariesDropdown} onOpenChange={setShowItinerariesDropdown}>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-white/90 hover:bg-white/10 hover:text-white transition-all duration-300">
-                  <Star className="h-4 w-4" />
-                  My Itineraries
-                  {savedItineraries.length > 0 && (
-                    <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
-                      {savedItineraries.length}
-                    </span>
-                  )}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto" align="end">
-                <DropdownMenuLabel className="flex items-center gap-2">
-                  <Star className="h-4 w-4" />
-                  Saved Itineraries
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {savedItineraries.length === 0 ? (
-                  <DropdownMenuItem disabled className="text-gray-500">
-                    No saved itineraries yet
-                  </DropdownMenuItem>
-                ) : (
-                  savedItineraries.map((itinerary) => (
-                    <DropdownMenuItem
-                      key={itinerary.id}
-                      className="flex flex-col items-start p-3 hover:bg-blue-50 cursor-pointer"
-                      onClick={() => loadSavedItinerary(itinerary)}
-                    >
-                      <div className="flex items-center justify-between w-full mb-1">
-                        <span className="font-semibold text-gray-800">{itinerary.destination}</span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteSavedItinerary(itinerary.id);
-                          }}
-                          className="text-red-500 hover:text-red-700 text-xs"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs text-gray-600">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {itinerary.date}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Map className="h-3 w-3" />
-                          {itinerary.places?.length || 0} places
-                        </span>
-                        {itinerary.hotel && (
-                          <span className="flex items-center gap-1">
-                            <User className="h-3 w-3" />
-                            Hotel
-                          </span>
-                        )}
-                      </div>
+            {/* My Itineraries Dropdown - only show if user is logged in */}
+            {user && (
+              <DropdownMenu open={showItinerariesDropdown} onOpenChange={setShowItinerariesDropdown}>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-white/90 hover:bg-white/10 hover:text-white transition-all duration-300">
+                    <Star className="h-4 w-4" />
+                    My Itineraries
+                    {savedItineraries.length > 0 && (
+                      <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                        {savedItineraries.length}
+                      </span>
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto" align="end">
+                  <DropdownMenuLabel className="flex items-center gap-2">
+                    <Star className="h-4 w-4" />
+                    Saved Itineraries
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {savedItineraries.length === 0 ? (
+                    <DropdownMenuItem disabled className="text-gray-500">
+                      No saved itineraries yet
                     </DropdownMenuItem>
-                  ))
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-blue-600 hover:text-blue-700 font-medium"
-                  onClick={saveCurrentItinerary}
-                >
-                  💾 Save Current Itinerary
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  ) : (
+                    savedItineraries.map((itinerary) => (
+                      <DropdownMenuItem
+                        key={itinerary.id}
+                        className="flex flex-col items-start p-3 hover:bg-blue-50 cursor-pointer"
+                        onClick={() => loadSavedItinerary(itinerary)}
+                      >
+                        <div className="flex items-center justify-between w-full mb-1">
+                          <span className="font-semibold text-gray-800">{itinerary.destination}</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteSavedItinerary(itinerary.id);
+                            }}
+                            className="text-red-500 hover:text-red-700 text-xs"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-gray-600">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {itinerary.date}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Map className="h-3 w-3" />
+                            {itinerary.places?.length || 0} places
+                          </span>
+                          {itinerary.hotel && (
+                            <span className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              Hotel
+                            </span>
+                          )}
+                        </div>
+                      </DropdownMenuItem>
+                    ))
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-blue-600 hover:text-blue-700 font-medium"
+                    onClick={saveCurrentItinerary}
+                  >
+                    💾 Save Current Itinerary
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </nav>
 
           {/* User Section */}
@@ -334,21 +337,24 @@ const Header = () => {
                 Trip Planner
               </button>
 
-              <button
-                onClick={() => {
-                  setShowItinerariesDropdown(!showItinerariesDropdown);
-                  setIsMobileMenuOpen(false);
-                }}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-white/90 hover:bg-white/10 hover:text-white transition-all duration-300"
-              >
-                <Star className="h-4 w-4" />
-                My Itineraries
-                {savedItineraries.length > 0 && (
-                  <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
-                    {savedItineraries.length}
-                  </span>
-                )}
-              </button>
+              {/* Mobile Menu - My Itineraries button only if user is logged in */}
+              {user && (
+                <button
+                  onClick={() => {
+                    setShowItinerariesDropdown(!showItinerariesDropdown);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-white/90 hover:bg-white/10 hover:text-white transition-all duration-300"
+                >
+                  <Star className="h-4 w-4" />
+                  My Itineraries
+                  {savedItineraries.length > 0 && (
+                    <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                      {savedItineraries.length}
+                    </span>
+                  )}
+                </button>
+              )}
 
               <button
                 onClick={saveCurrentItinerary}

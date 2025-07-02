@@ -178,9 +178,8 @@ const ItineraryPage = () => {
     setError("");
     setLoadingStartTime(Date.now());
     
-    // Calculate estimated time based on complexity
-    const complexity = selectedPlaces.length * parseInt(numberOfDays);
-    const estimatedSeconds = Math.max(10, Math.min(30, 10 + Math.floor(complexity / 2)));
+    // Force estimated time to be a random value between 20 and 25 seconds
+    const estimatedSeconds = Math.floor(Math.random() * 6) + 20; // 20-25 seconds
     setEstimatedTime(estimatedSeconds);
     
     // Handle hotel information - make it optional
