@@ -20,7 +20,7 @@ const HotelPage = ({ destination = 'Mumbai', hotelState, setHotelState, selected
     if (companion) filterText += ` Travel companion: ${companion}.`;
     if (food) filterText += ` Food preference: ${food}.`;
     const prompt = `List the top 1 hotels in ${destination} for a user with these preferences:${filterText} For each, provide: name, room_type (best suited for the travel companion type), price_per_person (in INR), food (Veg, Non-Veg, Vegan, etc.), companion_type (solo, couple, family, group), budget (low, medium, high), image_url (preferably from Wikimedia Commons or Unsplash). Respond ONLY with a valid JSON array of objects with these fields. Do not include any explanation, comments, or extra text.`;
-    fetch('/api/chat', {
+    fetch(`${import.meta.env.VITE_API_URL}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
