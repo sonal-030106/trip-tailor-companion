@@ -118,6 +118,53 @@ const LoginPage = () => {
               </svg>
               Continue with Google
             </Button>
+
+            {/* Simple email/password login for anyone */}
+            <form
+              className="space-y-4 pt-2"
+              onSubmit={e => {
+                e.preventDefault();
+                toast({
+                  title: isSignUp ? 'Account created!' : 'Welcome!',
+                  description: 'Redirecting to questionnaire...'
+                });
+                setTimeout(() => navigate('/questionnaire'), 1000);
+              }}
+            >
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  placeholder="Enter your email"
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  placeholder="Enter password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </Button>
+              </div>
+              <Button type="submit" className="w-full mt-2">Login</Button>
+            </form>
           </CardContent>
         </Card>
       </div>
