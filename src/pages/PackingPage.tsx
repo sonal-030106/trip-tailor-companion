@@ -199,17 +199,17 @@ const PackingPage = () => {
           <span>{totalItems - packedItems} items remaining</span>
         </div>
       </div>
-      <div className="mb-6 flex gap-2 items-center">
+      <div className="mb-6 flex flex-col sm:flex-row gap-3 sm:gap-2 items-center bg-white/70 rounded-2xl shadow-md p-4 border border-gray-200">
         <input
           ref={customInputRef}
           type="text"
-          className="border rounded px-3 py-2 w-64"
+          className="border border-gray-300 rounded-lg px-4 py-2 w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all text-gray-800 bg-white shadow-sm"
           placeholder="Enter item name..."
           value={customItem}
           onChange={e => setCustomItem(e.target.value)}
         />
         <select
-          className="border rounded px-2 py-2"
+          className="border border-gray-300 rounded-lg px-3 py-2 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all text-gray-800 bg-white shadow-sm"
           value={customCategory}
           onChange={e => setCustomCategory(e.target.value)}
         >
@@ -218,60 +218,82 @@ const PackingPage = () => {
             <option key={cat.name} value={cat.name}>{cat.name}</option>
           ))}
         </select>
-        <Button onClick={handleAddCustomItem} className="ml-2">+</Button>
+        <button
+          onClick={handleAddCustomItem}
+          className="ml-0 sm:ml-2 flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-orange-400 text-white text-2xl font-bold shadow-lg hover:scale-110 hover:from-blue-600 hover:to-orange-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
+          title="Add item"
+        >
+          <span className="-mt-1">+</span>
+        </button>
       </div>
       {packingList.tips && (
-        <div className="mb-8 p-6 rounded-2xl shadow-lg bg-gradient-to-br from-yellow-50 to-yellow-100 border-l-4 border-yellow-400">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">🌦️</span>
-            <span className="font-bold text-lg text-yellow-800">Special Tips for Your Trip</span>
+        <div className="mb-8 p-6 rounded-3xl shadow-2xl bg-gradient-to-br from-yellow-50 via-yellow-100 to-orange-50 border-l-8 border-yellow-300 animate-fade-in flex items-start gap-4 relative overflow-hidden">
+          <div className="flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-yellow-200 via-yellow-100 to-orange-100 shadow-lg mr-2">
+            <span className="text-4xl drop-shadow-lg">🌤️</span>
           </div>
-          <div className="text-yellow-900 text-base font-medium">{packingList.tips}</div>
+          <div>
+            <div className="font-extrabold text-xl mb-2 bg-gradient-to-r from-yellow-500 via-orange-400 to-yellow-600 bg-clip-text text-transparent">
+              Special Tips for Your Trip
+            </div>
+            <div className="text-yellow-900 text-base font-medium leading-relaxed">
+              {packingList.tips}
+            </div>
+          </div>
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {packingList?.categories.map((cat: any, idx: number) => (
-          <div key={cat.name} className={`rounded-xl border p-4 shadow-sm bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200`}>
-            <div className="font-bold text-lg mb-2 flex items-center gap-2 text-purple-800">
-              {cat.icon && <span>{cat.icon}</span>}
-              {cat.name}
-              <span className="ml-auto text-xs text-gray-400">{Object.values(checkedItems[cat.name] || {}).filter(Boolean).length}/{Object.keys(checkedItems[cat.name] || {}).length}</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {packingList?.categories.map((cat: any, idx: number) => {
+          // Define a set of unique, light pastel gradient classes
+          const gradients = [
+            'bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100',
+            'bg-gradient-to-br from-green-100 via-teal-100 to-blue-100',
+            'bg-gradient-to-br from-yellow-100 via-orange-100 to-pink-100',
+            'bg-gradient-to-br from-pink-100 via-red-100 to-yellow-100',
+            'bg-gradient-to-br from-cyan-100 via-blue-100 to-indigo-100',
+            'bg-gradient-to-br from-purple-100 via-fuchsia-100 to-red-100',
+          ];
+          const gradientClass = gradients[idx % gradients.length];
+          return (
+            <div
+              key={cat.name}
+              className={`rounded-2xl border-0 shadow-xl glass-card text-gray-800 p-6 animate-fade-in relative overflow-hidden transition-transform duration-300 hover:scale-105 ${gradientClass}`}
+              style={{ animationDelay: `${idx * 80}ms` }}
+            >
+              <div className="font-bold text-xl mb-3 flex items-center gap-2 drop-shadow-lg text-gray-900">
+                {cat.icon && <span className="text-2xl">{cat.icon}</span>}
+                {cat.name}
+                <span className="ml-auto text-xs text-gray-700 bg-white/40 px-2 py-1 rounded-full">
+                  {Object.values(checkedItems[cat.name] || {}).filter(Boolean).length}/{Object.keys(checkedItems[cat.name] || {}).length}
+                </span>
+              </div>
+              <div className="max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                {Object.keys(checkedItems[cat.name] || {}).map((item) => (
+                  <div key={item} className="flex items-center gap-2 mb-2 bg-white/30 rounded-lg px-2 py-1 transition-all hover:bg-white/50">
+                    <Checkbox
+                      checked={checkedItems[cat.name][item]}
+                      onCheckedChange={() => handleCheckboxChange(cat.name, item)}
+                      className="accent-blue-200 w-4 h-4 border-white/60"
+                    />
+                    <span className={checkedItems[cat.name][item] ? "line-through text-gray-400 font-medium text-base" : "text-gray-800 font-medium text-base"}>{item}</span>
+                    <button
+                      className="ml-auto text-red-300 hover:text-red-500"
+                      onClick={() => {
+                        setCheckedItems(prev => {
+                          const updated = { ...prev };
+                          delete updated[cat.name][item];
+                          return { ...updated };
+                        });
+                      }}
+                      title="Remove item"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="max-h-40 overflow-y-auto pr-2">
-              {Object.keys(checkedItems[cat.name] || {}).map((item) => (
-                <div key={item} className="flex items-center gap-2 mb-1">
-                  <Checkbox
-                    checked={checkedItems[cat.name][item]}
-                    onCheckedChange={() => handleCheckboxChange(cat.name, item)}
-                    className="accent-blue-500 w-4 h-4"
-                  />
-                  <span className={checkedItems[cat.name][item] ? "line-through text-gray-400" : ""}>{item}</span>
-                  <button
-                    className="ml-auto text-red-400 hover:text-red-600"
-                    onClick={() => {
-                      setCheckedItems(prev => {
-                        const updated = { ...prev };
-                        delete updated[cat.name][item];
-                        return { ...updated };
-                      });
-                    }}
-                    title="Remove item"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="mb-8">
-        <div className="font-bold text-lg mb-2">Mumbai Trip Highlights</div>
-        <div className="flex flex-wrap gap-2">
-          <div className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-medium">🎢 EsselWorld</div>
-          <div className="bg-yellow-100 text-yellow-700 px-4 py-2 rounded-full font-medium">🏖️ Juhu Beach</div>
-          <div className="bg-pink-100 text-pink-700 px-4 py-2 rounded-full font-medium">🎤 Arijit Concert</div>
-        </div>
+          );
+        })}
       </div>
     </div>
   );
