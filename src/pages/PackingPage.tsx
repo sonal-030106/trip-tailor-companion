@@ -38,18 +38,20 @@ const PackingPage = () => {
   const weather = sessionStorage.getItem('weather') || '';
   const preferences = sessionStorage.getItem('preferences') || '';
 
-  // Hash trip data for caching
-  const tripData = { destination, numberOfDays, days, startDate, endDate, travelCompanion, budget, transport, weather, preferences };
-  const dataString = JSON.stringify(tripData);
-  function hashFnv32a(str: string) {
-    let hval = 0x811c9dc5;
-    for (let i = 0; i < str.length; ++i) {
-      hval ^= str.charCodeAt(i);
-      hval += (hval << 1) + (hval << 4) + (hval << 7) + (hval << 8) + (hval << 24);
-    }
-    return (hval >>> 0).toString(16);
-  }
-  const packingHash = hashFnv32a(dataString);
+  // Compose a unique key for each user's trip
+  const tripKey = user && destination && startDate ? `${user.uid}_${destination}_${startDate}` : null;
+
+  // Add city descriptions mapping
+  const cityDescriptions: Record<string, string> = {
+    mumbai: "The city of dreams, famous for its vibrant culture, historic landmarks, and delicious street food.",
+    delhi: "India's capital, blending ancient monuments, bustling markets, and modern city life.",
+    goa: "A coastal paradise famous for its beaches, nightlife, and Portuguese heritage.",
+    pune: "A vibrant city known for its educational institutions, pleasant weather, and rich Maratha history.",
+    kerala: "God's Own Country, known for its backwaters, lush greenery, and unique culture.",
+    // Add more as needed
+  };
+  const cityKey = destination.trim().toLowerCase();
+  const cityDescription = cityDescriptions[cityKey] || "Get ready for your amazing trip!";
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -59,12 +61,15 @@ const PackingPage = () => {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !destination || !startDate) return;
+    // Clear sessionStorage for packingList and checkedItems when trip changes
+    sessionStorage.removeItem('packingList');
+    sessionStorage.removeItem('checkedItems');
     async function loadPackingList() {
       setLoading(true);
       setError("");
       try {
-        const docRef = doc(db, "packingLists", user.uid);
+        const docRef = doc(db, "packingLists", tripKey);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           setPackingList(docSnap.data().packingList);
@@ -90,7 +95,7 @@ const PackingPage = () => {
           model: TOGETHER_MODEL,
         });
         setPackingList(aiPacking);
-        await setDoc(doc(db, "packingLists", user.uid), { packingList: aiPacking });
+        await setDoc(doc(db, "packingLists", tripKey), { packingList: aiPacking });
       } catch (err: any) {
         setError(err.message || "Failed to generate packing list. Please try again.");
       } finally {
@@ -99,7 +104,7 @@ const PackingPage = () => {
     }
     loadPackingList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, destination, startDate]);
 
   // Initialize checkedItems when packingList loads
   useEffect(() => {
@@ -142,6 +147,19 @@ const PackingPage = () => {
   const packedItems = Object.values(checkedItems).reduce((sum, cat) => sum + Object.values(cat).filter(Boolean).length, 0);
   const progress = totalItems ? Math.round((packedItems / totalItems) * 100) : 0;
 
+  // Store packing list and checked items in sessionStorage whenever they change
+  useEffect(() => {
+    if (packingList) {
+      sessionStorage.setItem('packingList', JSON.stringify(packingList));
+    }
+  }, [packingList]);
+
+  useEffect(() => {
+    if (checkedItems) {
+      sessionStorage.setItem('checkedItems', JSON.stringify(checkedItems));
+    }
+  }, [checkedItems]);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -159,13 +177,17 @@ const PackingPage = () => {
   return (
     <div className="max-w-6xl mx-auto py-10 px-2">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-center mb-2">Your Mumbai Journey</h1>
-        <p className="text-center text-lg text-gray-600 mb-4">
-          The city of dreams, famous for its vibrant culture, historic landmarks, and delicious street food.
-        </p>
+        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500 rounded-2xl shadow-xl p-6 md:p-8 text-white">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="text-4xl font-bold text-center mb-2">Your {destination} Journey</h1>
+            <p className="text-center text-lg opacity-95 mb-3 font-medium">
+              {cityDescription}
+            </p>
+          </div>
+        </div>
       </div>
-      <div className="mb-6">
-        <div className="font-semibold mb-2">Mumbai Trip Packing Progress</div>
+      <div className="mb-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl shadow-lg p-6 border border-blue-200">
+        <div className="font-semibold mb-2 text-blue-800">{destination} Trip Packing Progress</div>
         <div className="w-full bg-gray-200 rounded-full h-4 mb-2">
           <div
             className="bg-gradient-to-r from-blue-500 to-purple-500 h-4 rounded-full transition-all duration-300"
@@ -198,10 +220,19 @@ const PackingPage = () => {
         </select>
         <Button onClick={handleAddCustomItem} className="ml-2">+</Button>
       </div>
+      {packingList.tips && (
+        <div className="mb-8 p-6 rounded-2xl shadow-lg bg-gradient-to-br from-yellow-50 to-yellow-100 border-l-4 border-yellow-400">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-2xl">🌦️</span>
+            <span className="font-bold text-lg text-yellow-800">Special Tips for Your Trip</span>
+          </div>
+          <div className="text-yellow-900 text-base font-medium">{packingList.tips}</div>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {packingList?.categories.map((cat: any, idx: number) => (
-          <div key={cat.name} className={`rounded-xl border p-4 shadow-sm bg-white`}>
-            <div className="font-bold text-lg mb-2 flex items-center gap-2">
+          <div key={cat.name} className={`rounded-xl border p-4 shadow-sm bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200`}>
+            <div className="font-bold text-lg mb-2 flex items-center gap-2 text-purple-800">
               {cat.icon && <span>{cat.icon}</span>}
               {cat.name}
               <span className="ml-auto text-xs text-gray-400">{Object.values(checkedItems[cat.name] || {}).filter(Boolean).length}/{Object.keys(checkedItems[cat.name] || {}).length}</span>

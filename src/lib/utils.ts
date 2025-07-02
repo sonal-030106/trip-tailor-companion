@@ -42,7 +42,7 @@ export async function generatePackingListWithAI({
   }
 
   // Refined, strict, and concise prompt
-  const prompt = `You are a smart travel assistant. Generate a categorized packing list for a trip with the following details:\n\nDestination: ${destination}\nStart Date: ${startDate}\nEnd Date: ${endDate}\nNumber of Days: ${numberOfDays}\nTravel Companion(s): ${travelCompanion}\nBudget: ${budget}\nTransport: ${transport}\nWeather: ${weather}\nPreferences: ${preferences}\n\nRespond ONLY with a single JSON code block, no explanation, and limit each category to 5 items.\n\nFormat: { "categories": [ { "name": "Category Name", "items": ["item1", "item2"] } ] }`;
+  const prompt = `You are a smart travel assistant. Generate a categorized packing list for a trip with the following details:\n\nDestination: ${destination}\nStart Date: ${startDate}\nEnd Date: ${endDate}\nNumber of Days: ${numberOfDays}\nTravel Companion(s): ${travelCompanion}\nBudget: ${budget}\nTransport: ${transport}\nWeather: ${weather}\nPreferences: ${preferences}\n\nRespond ONLY with a single JSON code block, no explanation, and limit each category to 5 items.\n\nFormat: { "categories": [ { "name": "Category Name", "items": ["item1", "item2"] } ], "tips": "Special tips about packing for this trip, especially considering the weather. Give practical, concise advice." }`;
 
   console.log("Together AI prompt:", prompt);
 

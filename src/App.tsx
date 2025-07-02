@@ -46,6 +46,14 @@ function AppContent() {
         <Route path="/packing" element={<PackingPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      {/* Footer */}
+      <footer className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-orange-500 text-white py-4 mt-12">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between px-4">
+          <span className="font-bold text-lg">Trip Tailor Companion</span>
+          <span className="text-sm opacity-80 mt-2 md:mt-0">&copy; {new Date().getFullYear()} All rights reserved.</span>
+          <span className="text-sm opacity-80 mt-2 md:mt-0">Made with ❤️ for travelers</span>
+        </div>
+      </footer>
     </>
   );
 }

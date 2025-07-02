@@ -41,33 +41,30 @@ export const HotelDetails = ({ formData, setFormData }: HotelDetailsProps) => {
               <DollarSign className="w-4 h-4 text-teal-500" />
               <Label className="text-base font-semibold">Hotel Budget</Label>
             </div>
-            <RadioGroup 
-              value={formData.budget} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, budget: value }))}
-              className="space-y-2"
-            >
-              <div className="flex items-center space-x-2 p-2 border rounded-lg hover:bg-teal-50 transition-colors">
-                <RadioGroupItem value="low" id="low" />
-                <div className="flex flex-col">
-                  <Label htmlFor="low" className="font-medium cursor-pointer text-sm">Low</Label>
-                  <span className="text-xs text-muted-foreground">₹1,000 - ₹2,000 per day</span>
+            {['Low', 'Medium', 'High'].map((budget, idx) => (
+              <label key={budget} htmlFor={`hotel-budget-${budget}`} className="block cursor-pointer">
+                <div className={`rounded-xl border p-4 mb-4 flex items-center gap-4 transition-all duration-200 ${formData.budget === budget.toLowerCase() ? 'border-green-400 bg-green-50' : 'border-gray-200 bg-white hover:border-green-300'}`}> 
+                  <input
+                    type="radio"
+                    id={`hotel-budget-${budget}`}
+                    name="hotel-budget"
+                    value={budget.toLowerCase()}
+                    checked={formData.budget === budget.toLowerCase()}
+                    onChange={() => setFormData((prev: any) => ({ ...prev, budget: budget.toLowerCase() }))}
+                    className="form-radio h-5 w-5 text-green-600 focus:ring-green-500 cursor-pointer"
+                    style={{ accentColor: '#22c55e' }}
+                  />
+                  <div>
+                    <div className="font-semibold text-lg text-gray-800">{budget}</div>
+                    <div className="text-gray-500 text-sm">
+                      {budget === 'Low' && '₹1,000 - ₹2,000 per day'}
+                      {budget === 'Medium' && '₹2,000 - ₹4,000 per day'}
+                      {budget === 'High' && '₹8,000+ per day'}
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center space-x-2 p-2 border rounded-lg hover:bg-teal-50 transition-colors">
-                <RadioGroupItem value="medium" id="medium" />
-                <div className="flex flex-col">
-                  <Label htmlFor="medium" className="font-medium cursor-pointer text-sm">Medium</Label>
-                  <span className="text-xs text-muted-foreground">₹2,000 - ₹4,000 per day</span>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2 p-2 border rounded-lg hover:bg-teal-50 transition-colors">
-                <RadioGroupItem value="high" id="high" />
-                <div className="flex flex-col">
-                  <Label htmlFor="high" className="font-medium cursor-pointer text-sm">High</Label>
-                  <span className="text-xs text-muted-foreground">₹8,000+ per day</span>
-                </div>
-              </div>
-            </RadioGroup>
+              </label>
+            ))}
           </CardContent>
         </Card>
 
@@ -80,14 +77,17 @@ export const HotelDetails = ({ formData, setFormData }: HotelDetailsProps) => {
             </div>
             <div className="grid grid-cols-1 gap-2">
               {["Veg", "Non-Veg", "Indian", "Mix"].map((meal) => (
-                <div key={meal} className="flex items-center space-x-2 p-2 border rounded-lg hover:bg-rose-50 transition-colors">
-                  <Checkbox
-                    id={meal}
+                <label key={meal} htmlFor={`meal-pref-${meal}`} className="flex items-center space-x-2 p-2 border rounded-lg hover:bg-rose-50 transition-colors cursor-pointer">
+                  <input
+                    type="checkbox"
+                    id={`meal-pref-${meal}`}
                     checked={formData.mealPreferences.includes(meal)}
-                    onCheckedChange={(checked) => handleMealPreferenceChange(meal, checked as boolean)}
+                    onChange={(e) => handleMealPreferenceChange(meal, e.target.checked)}
+                    className="form-checkbox h-5 w-5 text-rose-500 focus:ring-rose-400 cursor-pointer"
+                    style={{ accentColor: '#f43f5e' }}
                   />
-                  <Label htmlFor={meal} className="font-medium cursor-pointer text-sm">{meal}</Label>
-                </div>
+                  <span className="font-medium cursor-pointer text-sm">{meal}</span>
+                </label>
               ))}
             </div>
           </CardContent>

@@ -118,6 +118,15 @@ const Header = () => {
     if (user) fetchSavedItineraries();
   }, [user]);
 
+  // Listen for 'itinerary-saved' event to refresh itineraries
+  useEffect(() => {
+    const handleItinerarySaved = () => {
+      if (user) fetchSavedItineraries();
+    };
+    window.addEventListener('itinerary-saved', handleItinerarySaved);
+    return () => window.removeEventListener('itinerary-saved', handleItinerarySaved);
+  }, [user]);
+
   // Function to delete saved itinerary from Firestore
   const deleteSavedItinerary = async (id: string) => {
     try {
@@ -131,15 +140,8 @@ const Header = () => {
   // Function to load saved itinerary
   const loadSavedItinerary = (itinerary: any) => {
     try {
-      sessionStorage.setItem('destination', itinerary.destination);
-      sessionStorage.setItem('generatedItinerary', itinerary.itinerary);
-      if (itinerary.places) {
-        sessionStorage.setItem('selectedPlaces', JSON.stringify(itinerary.places));
-      }
-      if (itinerary.hotel) {
-        sessionStorage.setItem('selectedHotel', JSON.stringify(itinerary.hotel));
-      }
-      navigate('/itinerary');
+      // Pass the saved itinerary JSON in location.state so ItineraryPage can display it directly
+      navigate('/itinerary', { state: { itinerary: itinerary.itinerary, destination: itinerary.destination, hotel: itinerary.hotel, places: itinerary.places, date: itinerary.date } });
       setShowItinerariesDropdown(false);
     } catch (error) {
       console.error('Error loading itinerary:', error);

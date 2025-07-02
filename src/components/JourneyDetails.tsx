@@ -72,10 +72,15 @@ export const JourneyDetails = ({ formData, setFormData }: JourneyDetailsProps) =
               className="grid grid-cols-2 gap-2"
             >
               {["Local Train/Metro", "Car", "Bus", "Cab", "Best Route"].map((method) => (
-                <div key={method} className="flex items-center space-x-2 p-2 border rounded-lg hover:bg-purple-50 transition-colors">
+                <label
+                  key={method}
+                  htmlFor={method}
+                  className={`flex items-center space-x-2 p-2 border rounded-lg hover:bg-purple-50 transition-colors cursor-pointer ${formData.travelMethod === method ? 'ring-2 ring-purple-400' : ''}`}
+                  onClick={() => setFormData(prev => ({ ...prev, travelMethod: method }))}
+                >
                   <RadioGroupItem value={method} id={method} />
-                  <Label htmlFor={method} className="font-medium cursor-pointer text-xs">{method}</Label>
-                </div>
+                  <span className="font-medium text-xs">{method}</span>
+                </label>
               ))}
             </RadioGroup>
           </CardContent>

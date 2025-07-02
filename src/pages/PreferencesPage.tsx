@@ -471,6 +471,22 @@ const PlaceCard = ({ place, isSelected, onSelect }) => (
         </span>
       </div>
     )}
+    {/* Get Directions Button */}
+    <button
+      type="button"
+      onClick={e => {
+        e.stopPropagation();
+        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}`, '_blank');
+      }}
+      className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold text-xs hover:bg-blue-200 transition border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+      aria-label={`Get directions to ${place.name}`}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7-7.5 11-7.5 11s-7.5-4-7.5-11a7.5 7.5 0 1115 0z" />
+      </svg>
+      Get Directions
+    </button>
   </div>
 );
 
@@ -737,22 +753,6 @@ export default function PreferencesPage() {
             </div>
             <div className="text-sm text-gray-500">
               {Math.round(progress)}% complete
-            </div>
-          </div>
-          
-          {/* Time Information */}
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between text-gray-600">
-              <span>Elapsed time:</span>
-              <span className="font-semibold">{elapsedTime}s</span>
-            </div>
-            <div className="flex justify-between text-gray-600">
-              <span>Estimated remaining:</span>
-              <span className="font-semibold">{remainingTime}s</span>
-            </div>
-            <div className="flex justify-between text-gray-600">
-              <span>Total estimated:</span>
-              <span className="font-semibold">{estimatedTime}s</span>
             </div>
           </div>
           

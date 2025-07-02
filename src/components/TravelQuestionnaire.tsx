@@ -214,22 +214,6 @@ export const TravelQuestionnaire = () => {
             </div>
           </div>
           
-          {/* Time Information */}
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between text-gray-600">
-              <span>Elapsed time:</span>
-              <span className="font-semibold">{elapsedTime}s</span>
-            </div>
-            <div className="flex justify-between text-gray-600">
-              <span>Estimated remaining:</span>
-              <span className="font-semibold">{remainingTime}s</span>
-            </div>
-            <div className="flex justify-between text-gray-600">
-              <span>Total estimated:</span>
-              <span className="font-semibold">{estimatedTime}s</span>
-            </div>
-          </div>
-          
           {/* Status Messages */}
           <div className="mt-6 p-3 bg-blue-50 rounded-lg">
             <div className="text-sm text-blue-700">
@@ -867,21 +851,20 @@ export const PackingDetails = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {packingCategories.map((category) => (
-          <Card key={category.name} className="border-2 hover:border-blue-300 transition-all duration-300">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{category.icon}</span>
-                  <CardTitle className="text-base font-semibold">{category.name}</CardTitle>
-                </div>
-                <Checkbox
-                  checked={selectedCategories.includes(category.name)}
-                  onCheckedChange={() => toggleCategory(category.name)}
-                  className="w-4 h-4"
-                />
-              </div>
-            </CardHeader>
-          </Card>
+          <label key={category.name} htmlFor={`packing-cat-${category.name}`} className="block cursor-pointer">
+            <div className={`rounded-xl border p-4 flex items-center gap-4 mb-4 transition-all duration-200 ${selectedCategories.includes(category.name) ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-300'}`}> 
+              <input
+                type="checkbox"
+                id={`packing-cat-${category.name}`}
+                checked={selectedCategories.includes(category.name)}
+                onChange={() => toggleCategory(category.name)}
+                className="form-checkbox h-5 w-5 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                style={{ accentColor: '#3b82f6' }}
+              />
+              <span className="text-2xl">{category.icon}</span>
+              <span className="font-semibold text-lg text-gray-800">{category.name}</span>
+            </div>
+          </label>
         ))}
       </div>
 

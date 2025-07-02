@@ -7,6 +7,10 @@ import { Input } from "@/components/ui/input";
 import { useLocation, useNavigate } from "react-router-dom";
 import { extractJsonArrayFromText } from '../lib/utils';
 import { addDays, format } from 'date-fns';
+import { db } from "@/firebase";
+import { collection, addDoc } from "firebase/firestore";
+import { auth } from "@/firebase";
+import { useAuthState } from "react-firebase-hooks/auth";
 
 const cityDescriptions: Record<string, string> = {
   mumbai: "The city of dreams, famous for its vibrant culture, historic landmarks, and delicious street food.",
@@ -31,6 +35,7 @@ const ItineraryPage = () => {
   const [quickText, setQuickText] = useState<string | null>(null);
   const [loadingStartTime, setLoadingStartTime] = useState<number | null>(null);
   const [estimatedTime, setEstimatedTime] = useState<number>(15); // seconds
+  const [user] = useAuthState(auth);
 
   // Always read trip details from navigation state first, then sessionStorage
   const selectedPlaces = location.state?.selectedPlaces || JSON.parse(sessionStorage.getItem('selectedPlaces') || '[]');
@@ -110,10 +115,13 @@ const ItineraryPage = () => {
   ];
 
   useEffect(() => {
+    // If a saved itinerary is provided (e.g., from My Itineraries), display it and skip trip details check
     if (location.state?.itinerary) {
       setQuickText(location.state.itinerary);
+      setError(""); // Clear any previous error
       return;
     }
+    // If not viewing a saved itinerary, require trip details for generation
     if (!selectedPlaces || !foodOptions || !transport || !startDate || !numberOfDays || !destination) {
       setError("Missing trip details. Please go back and complete the selection.");
       return;
@@ -809,6 +817,16 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
                       <span className="font-semibold">Personalized</span>
                     </div>
                   </div>
+                  
+                  {/* Save Itinerary Button */}
+                  <div className="mt-6">
+                    <Button
+                      onClick={handleSaveItinerary}
+                      className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    >
+                      💾 Save Itinerary
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -981,18 +999,7 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
                         </h2>
                         <p className="text-gray-600">{day.activities.map(a => a.description).filter(Boolean).join(' | ')}</p>
                       </div>
-                      <button
-                        className="flex items-center gap-2 border px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 bg-white shadow"
-                        onClick={() => {
-                          const firstPlace = day.activities[0]?.name;
-                          if (firstPlace) {
-                            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(firstPlace)}`, '_blank');
-                          }
-                        }}
-                      >
-                        <span>Get Directions</span>
-                        <MapPin className={`w-4 h-4 ${iconColor[selectedDay % 3]}`} />
-                      </button>
+                      {/* Removed the Get Directions button from here for clarity */}
                     </div>
 
                     {/* Daily Schedule Timeline */}
@@ -1025,7 +1032,21 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
                               <div className="flex-1 bg-white rounded-xl shadow-sm border p-4">
                                 {/* Place Header */}
                                 <div className="flex items-center justify-between mb-3">
-                                  <h3 className="text-xl font-bold text-gray-800">{activity.name}</h3>
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="text-xl font-bold text-gray-800">{activity.name}</h3>
+                                    <button
+                                      type="button"
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.name)}`, '_blank');
+                                      }}
+                                      className="ml-2 inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-100 text-blue-700 font-semibold text-xs hover:bg-blue-200 transition border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                      aria-label={`Get directions to ${activity.name}`}
+                                    >
+                                      <MapPin className="w-4 h-4" />
+                                      Directions
+                                    </button>
+                                  </div>
                                   <Badge variant="secondary" className="bg-green-100 text-green-800">
                                     {activity.time || '2-3 hours'}
                                   </Badge>
@@ -1284,9 +1305,23 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
                           { type: 'Dinner', time: '8:00 PM', icon: Utensils }
                         ].map((meal, idx) => {
                           // Find a meal suggestion for each type from all activities
-                          const mealSuggestion = day.activities
+                          let mealSuggestion = day.activities
                             .map((a) => a.meal)
-                            .find((m) => m?.toLowerCase().includes(meal.type.toLowerCase()));
+                            .find((m) => {
+                              if (typeof m === 'string') {
+                                return m.toLowerCase().includes(meal.type.toLowerCase());
+                              } else if (typeof m === 'object' && m !== null) {
+                                // If meal is an object, check if it has the current meal type (case-insensitive)
+                                const key = Object.keys(m).find(k => k.toLowerCase() === meal.type.toLowerCase());
+                                return key && typeof m[key] === 'string';
+                              }
+                              return false;
+                            });
+                          // If mealSuggestion is an object, extract the value for the current meal type
+                          if (typeof mealSuggestion === 'object' && mealSuggestion !== null) {
+                            const key = Object.keys(mealSuggestion).find(k => k.toLowerCase() === meal.type.toLowerCase());
+                            mealSuggestion = key ? mealSuggestion[key] : undefined;
+                          }
                           
                           const colorMap = [
                             'bg-orange-50 border-orange-200',
@@ -1511,22 +1546,6 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
             </div>
           </div>
           
-          {/* Time Information */}
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between text-gray-600">
-              <span>Elapsed time:</span>
-              <span className="font-semibold">{elapsedTime}s</span>
-            </div>
-            <div className="flex justify-between text-gray-600">
-              <span>Estimated remaining:</span>
-              <span className="font-semibold">{remainingTime}s</span>
-            </div>
-            <div className="flex justify-between text-gray-600">
-              <span>Total estimated:</span>
-              <span className="font-semibold">{estimatedTime}s</span>
-            </div>
-          </div>
-          
           {/* Status Messages */}
           <div className="mt-6 p-3 bg-blue-50 rounded-lg">
             <div className="text-sm text-blue-700">
@@ -1545,6 +1564,43 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
         </div>
       </div>
     );
+  };
+
+  // Save Itinerary handler
+  const handleSaveItinerary = async () => {
+    try {
+      if (!user) {
+        alert('You must be logged in to save itineraries.');
+        return;
+      }
+      const destination = sessionStorage.getItem('destination');
+      const generatedItinerary = sessionStorage.getItem('generatedItinerary');
+      const selectedPlaces = sessionStorage.getItem('selectedPlaces');
+      const selectedHotel = sessionStorage.getItem('selectedHotel');
+      if (destination && generatedItinerary) {
+        // Get packing list and checked items from sessionStorage
+        const packingList = sessionStorage.getItem('packingList');
+        const checkedItems = sessionStorage.getItem('checkedItems');
+        const itineraryData = {
+          userId: user.uid,
+          destination,
+          date: new Date().toLocaleDateString(),
+          places: selectedPlaces ? JSON.parse(selectedPlaces) : [],
+          hotel: selectedHotel ? JSON.parse(selectedHotel) : null,
+          itinerary: generatedItinerary,
+          packingList: packingList ? JSON.parse(packingList) : null,
+          checkedItems: checkedItems ? JSON.parse(checkedItems) : null,
+          timestamp: new Date().toISOString()
+        };
+        await addDoc(collection(db, 'itineraries'), itineraryData);
+        alert('Itinerary saved successfully!');
+      } else {
+        alert('No itinerary to save. Please generate an itinerary first.');
+      }
+    } catch (error) {
+      console.error('Error saving itinerary:', error);
+      alert('Error saving itinerary. Please try again.');
+    }
   };
 
   if (loading) return <LoadingSpinner />;
