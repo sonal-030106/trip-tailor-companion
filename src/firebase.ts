@@ -4,14 +4,13 @@ import { getAuth } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
 const firebaseConfig = {
-    apiKey: "AIzaSyC4f_vFwZmd18NWVNPQZTDDYloKz0xOYD0",
-    authDomain: "smart-trip-planner-2d842.firebaseapp.com",
-    projectId: "smart-trip-planner-2d842",
-    storageBucket: "smart-trip-planner-2d842.appspot.com",
-    messagingSenderId: "1020455814664",
-    appId: "1:1020455814664:web:e022c38835e93d326b33bd",
-    measurementId: "G-WS1D24CV4D"
-  };
+  apiKey: "AIzaSyArdrIm72De0MPjMDpfxZb945_2nUhNduM",
+  authDomain: "sample-firebase-ai-app-90bfe.firebaseapp.com",
+  projectId: "sample-firebase-ai-app-90bfe",
+  storageBucket: "sample-firebase-ai-app-90bfe.firebasestorage.app",
+  messagingSenderId: "106187920336",
+  appId: "1:106187920336:web:927ef56829c7c42e3b1fd5"
+};
   
 
 const app = initializeApp(firebaseConfig);
