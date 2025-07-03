@@ -65,7 +65,7 @@ Trip Tailor Companion (TravelGenie) is an AI-powered web application that helps 
 ---
 
 ## Screenshots
-| Home Page | Category Selection | Itinerary | Packing | Packing List | Questionnaire |
+| Home Page | Category Selection | Itinerary | Packing | Places List | Questionnaire |
 |-----------|-------------------|-----------|---------|--------------|---------------|
 | ![Home](public/Home.jpg) | ![Category](public/Category.jpg) | ![Itinerary](public/iternary.jpg) | ![Packing](public/Packing.jpg) | ![Places List](public/Places.jpg) | ![Questionnaire](public/Questionnaire.jpg) |
 
@@ -88,4 +88,4 @@ Trip Tailor Companion (TravelGenie) is an AI-powered web application that helps 
 ---
 
 ## Example
-Inspired by: [https://github.com/username/project-name](https://github.com/sonal-030106/trip-tailor-companion.git)
+Inspired by: [https://github.com/sonal-030106/trip-tailor-companion.git](https://github.com/sonal-030106/trip-tailor-companion.git)
