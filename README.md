@@ -65,9 +65,9 @@ Trip Tailor Companion (TravelGenie) is an AI-powered web application that helps 
 ---
 
 ## Screenshots
-| Home Page | Category Selection | Itinerary | Packing | Questionnaire |
-|-----------|-------------------|-----------|---------|---------------|
-| ![Home](public/Home.jpg) | ![Category](public/Category.jpg) | ![Itinerary](public/iternary.jpg) | ![Packing](public/Packing.jpg) | ![Questionnaire](public/Questionnaire.jpg) |
+| Home Page | Category Selection | Itinerary | Packing | Packing List | Questionnaire |
+|-----------|-------------------|-----------|---------|--------------|---------------|
+| ![Home](public/Home.jpg) | ![Category](public/Category.jpg) | ![Itinerary](public/iternary.jpg) | ![Packing](public/Packing.jpg) | ![Packing List](public/image.png) | ![Questionnaire](public/Questionnaire.jpg) |
 
 ---
 
