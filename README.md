@@ -44,6 +44,7 @@ Trip Tailor Companion (TravelGenie) is an AI-powered web application that helps 
 4. **Run the development server:**
    ```bash
    npm run dev
+   
    ```
 5. **Build for production:**
    ```bash
@@ -53,7 +54,7 @@ Trip Tailor Companion (TravelGenie) is an AI-powered web application that helps 
 ---
 
 ## Link to Deployed Application
-> [Add your deployment link here]
+> [https://trip-tailor-companion.netlify.app/]
 
 ---
 
