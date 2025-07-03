@@ -44,6 +44,7 @@ Trip Tailor Companion (TravelGenie) is an AI-powered web application that helps 
 4. **Run the development server:**
    ```bash
    npm run dev
+   
    ```
 5. **Build for production:**
    ```bash
@@ -53,7 +54,7 @@ Trip Tailor Companion (TravelGenie) is an AI-powered web application that helps 
 ---
 
 ## Link to Deployed Application
-> [Add your deployment link here]
+> [https://trip-tailor-companion.netlify.app/]
 
 ---
 
@@ -64,9 +65,9 @@ Trip Tailor Companion (TravelGenie) is an AI-powered web application that helps 
 ---
 
 ## Screenshots
-| Home Page | Category Selection | Itinerary | Packing | Questionnaire |
-|-----------|-------------------|-----------|---------|---------------|
-| ![Home](public/Home.jpg) | ![Category](public/Category.jpg) | ![Itinerary](public/iternary.jpg) | ![Packing](public/Packing.jpg) | ![Questionnaire](public/Questionnaire.jpg) |
+| Home Page | Category Selection | Itinerary | Packing | Places List | Questionnaire |
+|-----------|-------------------|-----------|---------|--------------|---------------|
+| ![Home](public/Home.jpg) | ![Category](public/Category.jpg) | ![Itinerary](public/iternary.jpg) | ![Packing](public/Packing.jpg) | ![Places List](public/Places.jpg) | ![Questionnaire](public/Questionnaire.jpg) |
 
 ---
 
@@ -87,4 +88,4 @@ Trip Tailor Companion (TravelGenie) is an AI-powered web application that helps 
 ---
 
 ## Example
-Inspired by: [https://github.com/username/project-name](https://github.com/sonal-030106/trip-tailor-companion.git)
+Inspired by: [https://github.com/sonal-030106/trip-tailor-companion.git](https://github.com/sonal-030106/trip-tailor-companion.git)

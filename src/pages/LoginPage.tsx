@@ -18,8 +18,10 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [showDemoModal, setShowDemoModal] = useState(true);
 
   useEffect(() => {
+    setShowDemoModal(true);
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
@@ -139,7 +141,7 @@ const LoginPage = () => {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
-                  placeholder="Enter your email"
+                  placeholder="sonal@gmail.com"
                 />
               </div>
               <div>
@@ -150,7 +152,7 @@ const LoginPage = () => {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
-                  placeholder="Enter password"
+                  placeholder="admin123"
                 />
                 <Button
                   type="button"
@@ -168,6 +170,25 @@ const LoginPage = () => {
           </CardContent>
         </Card>
       </div>
+      {/* Demo Credentials Modal */}
+      {showDemoModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <div className="bg-white p-6 rounded shadow-lg max-w-sm w-full">
+            <h2 className="text-lg font-bold mb-2">Demo Credentials</h2>
+            <p className="mb-2">Please sign in with the following demo credentials:</p>
+            <div className="mb-2">
+              <strong>Email:</strong> sonal@gmail.com<br />
+              <strong>Password:</strong> admin123
+            </div>
+            <button
+              className="mt-2 px-4 py-2 bg-blue-600 text-white rounded"
+              onClick={() => setShowDemoModal(false)}
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
