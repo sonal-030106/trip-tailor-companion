@@ -295,7 +295,7 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
       ]
     }
   ]}`;
-    fetch('/api/chat', {
+    fetch(`${import.meta.env.VITE_API_URL}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
