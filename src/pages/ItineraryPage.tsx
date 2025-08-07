@@ -38,19 +38,41 @@ const ItineraryPage = () => {
   const [estimatedTime, setEstimatedTime] = useState<number>(15); // seconds
   const [user] = useAuthState(auth);
 
-  // Always read trip details from navigation state first, then sessionStorage
-  const selectedPlaces = location.state?.selectedPlaces || JSON.parse(sessionStorage.getItem('selectedPlaces') || '[]');
-  const selectedHotels = location.state?.selectedHotels || JSON.parse(sessionStorage.getItem('selectedHotels') || '[]');
-  const selectedHotel = location.state?.selectedHotel || JSON.parse(sessionStorage.getItem('selectedHotel') || 'null');
-  const destination = location.state?.destination || sessionStorage.getItem('destination') || '';
-  const numberOfDays = location.state?.numberOfDays || sessionStorage.getItem('numberOfDays') || '';
-  const days = location.state?.days || sessionStorage.getItem('days') || '';
-  const endDate = location.state?.endDate || sessionStorage.getItem('endDate') || '';
-  const foodOptions = location.state?.foodOptions || JSON.parse(sessionStorage.getItem('foodOptions') || '[]');
-  const startDate = location.state?.startDate || sessionStorage.getItem('startDate') || '';
-  const transport = location.state?.transport || sessionStorage.getItem('transport') || '';
-  const travelCompanion = location.state?.travelCompanion || sessionStorage.getItem('travelCompanion') || '';
-  const budget = location.state?.budget || sessionStorage.getItem('budget') || '';
+  // Enhanced data loading with validation
+  const loadStateData = (key: string, defaultValue: any) => {
+    try {
+      const stateValue = location.state?.[key];
+      if (stateValue !== undefined) return stateValue;
+      
+      const sessionValue = sessionStorage.getItem(key);
+      if (sessionValue) {
+        try {
+          return JSON.parse(sessionValue);
+        } catch (e) {
+          console.error(`Error parsing ${key} from sessionStorage`, e);
+          return defaultValue;
+        }
+      }
+      return defaultValue;
+    } catch (e) {
+      console.error(`Error loading ${key}`, e);
+      return defaultValue;
+    }
+  };
+
+  // Load all state data with validation
+  const selectedPlaces = loadStateData('selectedPlaces', []);
+  const selectedHotels = loadStateData('selectedHotels', []);
+  const selectedHotel = loadStateData('selectedHotel', null);
+  const destination = loadStateData('destination', '');
+  const numberOfDays = loadStateData('numberOfDays', '');
+  const days = loadStateData('days', '');
+  const endDate = loadStateData('endDate', '');
+  const foodOptions = loadStateData('foodOptions', []);
+  const startDate = loadStateData('startDate', '');
+  const transport = loadStateData('transport', '');
+  const travelCompanion = loadStateData('travelCompanion', '');
+  const budget = loadStateData('budget', '');
   const cityKey = destination.trim().toLowerCase();
   const cityDescription = cityDescriptions[cityKey] || "Explore this amazing destination!";
 
@@ -309,22 +331,88 @@ RESPOND WITH ONLY THIS JSON STRUCTURE - NO OTHER TEXT:
       .then(res => res.json())
       .then(data => {
         const content = data.choices?.[0]?.message?.content || '';
-        setQuickText(content);
-        setLoading(false);
         
-        // When saving the generated itinerary, check if the same itinerary ID is already saved
-        const storedItinerary = sessionStorage.getItem('generatedItinerary');
-        const storedItineraryData = sessionStorage.getItem('itineraryDataHash');
-        // ... existing code ...
-        // Only save if not already saved
-        if ((!storedItinerary || storedItineraryData !== currentDataHash) && content) {
-          sessionStorage.setItem('generatedItinerary', content);
-          sessionStorage.setItem('itineraryDataHash', currentDataHash);
-          sessionStorage.setItem('itineraryGenerated', 'true');
-          // Set flag that itinerary has been generated at least once
-          sessionStorage.setItem('itineraryGeneratedOnce', 'true');
+        // Validate and clean the response
+        if (!content || content.trim() === '') {
+          setError('Empty response received from itinerary generation.');
+          setLoading(false);
+          return;
         }
-        // ... existing code ...
+
+        // Try multiple parsing strategies
+        let parsedResponse = null;
+        let lastError = null;
+        
+        // Strategy 1: Direct JSON parse
+        try {
+          parsedResponse = JSON.parse(content.trim());
+        } catch (e) {
+          lastError = e;
+        }
+
+        // Strategy 2: Extract JSON using regex
+        if (!parsedResponse) {
+          try {
+            const jsonMatch = content.match(/\{.*\}/s);
+            if (jsonMatch) {
+              parsedResponse = JSON.parse(jsonMatch[0]);
+            }
+          } catch (e) {
+            lastError = e;
+          }
+        }
+
+        // Strategy 3: Extract JSON using text extraction
+        if (!parsedResponse) {
+          try {
+            parsedResponse = JSON.parse(extractJsonArrayFromText(content));
+          } catch (e) {
+            lastError = e;
+          }
+        }
+
+        // Handle parsed response
+        if (parsedResponse) {
+          try {
+            // Validate the parsed response structure
+            if (!parsedResponse.itinerary || !Array.isArray(parsedResponse.itinerary)) {
+              throw new Error('Invalid itinerary structure');
+            }
+
+            // Validate each day in the itinerary
+            parsedResponse.itinerary.forEach(day => {
+              if (!day.day || !day.date || !Array.isArray(day.places)) {
+                throw new Error('Invalid day structure');
+              }
+            });
+
+            // Store and display valid response
+            setQuickText(JSON.stringify(parsedResponse, null, 2));
+            setLoading(false);
+            
+            // When saving the generated itinerary, check if the same itinerary ID is already saved
+            const storedItinerary = sessionStorage.getItem('generatedItinerary');
+            const storedItineraryData = sessionStorage.getItem('itineraryDataHash');
+            
+            // Only save if not already saved
+            if ((!storedItinerary || storedItineraryData !== currentDataHash) && content) {
+              sessionStorage.setItem('generatedItinerary', JSON.stringify(parsedResponse, null, 2));
+              sessionStorage.setItem('itineraryDataHash', currentDataHash);
+              sessionStorage.setItem('itineraryGenerated', 'true');
+              sessionStorage.setItem('itineraryGeneratedOnce', 'true');
+            }
+          } catch (validationError) {
+            console.error('Failed to validate parsed response:', validationError);
+            setError('Failed to validate itinerary response. Please try again.');
+            setLoading(false);
+            setQuickText(content);
+          }
+        } else {
+          console.error('Failed to parse itinerary response:', lastError);
+          setError('Failed to parse itinerary response. Please try again.');
+          setLoading(false);
+          setQuickText(content);
+        }
       })
       .catch(() => {
         setError('Failed to fetch quick itinerary. Please try again.');
